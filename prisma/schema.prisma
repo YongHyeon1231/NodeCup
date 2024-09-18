@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum lineUp {
+  A
+  B
+}
+
+enum position {
+  forward
+  midfielder
+  defender
+  manager
+}
+
+enum positionType {
+  player
+  manager
+}
+
+// 스키마 모델링
+model Users {
+  userId Int @id @default(autoincrement())
+  userName String
+  email String @unique
+  password String
+
+  club Club? // 1:1 club이 삭제되도 Users는 남게
+
+  @@map("Users")
+}
+
+model Club {
+  clubId Int @id @default(autoincrement())
+  userId Int @unique
+  clubName String @unique
+  gold Int @default(10000)
+  cash Int @default(5000)
+  MMR Int @default(1000)
+  win Int @default(0)
+  lose Int @default(0)
+
+  users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  formations Formations[]
+  cards Cards[]
+
+  @@map("Club")
+}
+
+model Formations {
+  formationId Int @id @default(autoincrement())
+  userId Int
+  clubId Int
+  cardId Int
+  teamTotalStat Int
+
+  // enum
+  lineUp lineUp
+  position position
+
+  club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+
+  @@map("Formations")
+}
+
+model Cards {
+  cardId Int @id @default(autoincrement())
+  userId Int
+  clubId Int
+  cardNumber Int
+  cardCode Int
+
+  club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
+
+  @@map("Cards")
+}
+
+model CardModel {
+  cardCode Int @id @default(autoincrement())
+  cardName String
+  card_enhancement Int @default(0)
+  speed Int
+  shoot_accuracy Int
+  shoot_power Int
+  defense Int
+  stamina Int
+  type positionType
+
+  @@map("CardModel")
+}
