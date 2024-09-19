@@ -28,7 +28,7 @@ router.post('/upgrade', au, async (req, res, next) => {
     }
 
     if (upgradecard.userId !== req.user.userId) {
-      return res.status(400).json({ Message: '다른 유저의 카드를 강화할 수 없슨니다.' });
+      return res.status(403).json({ Message: '다른 유저의 카드를 강화할 수 없슨니다.' });
     }
 
     // 재료카드 찾기
