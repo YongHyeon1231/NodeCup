@@ -84,6 +84,13 @@ model Cards {
   cardNumber Int
   cardCode Int
 
+  cardName String
+  speed Int
+  shoot_accuracy Int
+  shoot_power Int
+  defense Int
+  stamina Int
+
   club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
 
   @@map("Cards")

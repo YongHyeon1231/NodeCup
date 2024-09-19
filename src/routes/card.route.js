@@ -9,7 +9,8 @@ router.get('/cards', au, async (req, res, next) => {
       where: { userId: req.user.userId },
       select: {
         card_enhancement: true,
-        cardNumber: true
+        cardNumber: true,
+        cardCode: true
       }
     });
 
@@ -20,9 +21,9 @@ router.get('/cards', au, async (req, res, next) => {
       });
 
       const mergedObj = {...card, ...cards[i]}
+
       msg.push(mergedObj);
     }
-    console.log(msg);
 
     return res.status(200).json({msg});
   } catch (error) {
