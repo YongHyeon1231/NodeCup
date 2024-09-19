@@ -21,25 +21,25 @@ router.post('/shop/gacha', au, async (req, res, next) => {
 
     // 유효성 검사
     if (type !== 'player' && type !== 'manager') {
-      return res.status(404).json({ Message: '올바른 카드타입(player,manager)을 입력하세요.' });
+      return res.status(400).json({ Message: '올바른 카드타입(player,manager)을 입력하세요.' });
     }
 
     if (isNaN(count)) {
-      return res.status(404).json({ Message: '개수(count)는 숫자를 입력하세요.' });
+      return res.status(400).json({ Message: '개수(count)는 숫자를 입력하세요.' });
     }
 
     const countplayer = await prisma.cardModel.count({
       where: { type: 'player' },
     });
     if (countplayer === 0 && type === 'player') {
-      return res.status(404).json({ Message: '아직 선수카드 모델을 준비중입니다.' });
+      return res.status(503).json({ Message: '아직 선수카드 모델을 준비중입니다.' });
     }
 
     const countmanager = await prisma.cardModel.count({
       where: { type: 'manager' },
     });
     if (countmanager === 0 && type === 'manager') {
-      return res.status(404).json({ Message: '아직 감독카드 모델을 준비중입니다.' });
+      return res.status(503).json({ Message: '아직 감독카드 모델을 준비중입니다.' });
     }
 
     let cards = [];
@@ -47,7 +47,7 @@ router.post('/shop/gacha', au, async (req, res, next) => {
     // 선수 카드 구매 요청 시
     if (type === 'player') {
       if (club.gold < 1000 * count) {
-        return res.status(400).json({ Message: '골드가 부족합니다.' });
+        return res.status(402).json({ Message: '골드가 부족합니다.' });
       }
       const allplayercard = await prisma.cardModel.findMany({
         where: { type: 'player' },
@@ -87,7 +87,7 @@ router.post('/shop/gacha', au, async (req, res, next) => {
     // 감독카드 구매 요청 시
     if (type === 'manager') {
       if (club.cash < 1000 * count) {
-        return res.status(400).json({ Message: '캐시가 부족합니다.' });
+        return res.status(402).json({ Message: '캐시가 부족합니다.' });
       }
       const allmanagercard = await prisma.cardModel.findMany({
         where: { type: 'manager' },
@@ -131,7 +131,7 @@ router.post('/shop/gacha', au, async (req, res, next) => {
 });
 
 // 캐시 충전
-router.post('/shop/recharge', au, async (req, res, next) => {
+router.patch('/shop/recharge', au, async (req, res, next) => {
   try {
     const { cash } = req.body;
 

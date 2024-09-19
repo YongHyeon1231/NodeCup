@@ -17,7 +17,7 @@ router.post('/upgrade', au, async (req, res, next) => {
 
     // 유효성 검사
     if (isNaN(cardId)) {
-      return res.status(404).json({ Message: '올바른 형식의 카드아이디를 입력하세요.' });
+      return res.status(400).json({ Message: '올바른 형식의 카드아이디를 입력하세요.' });
     }
 
     const upgradecard = await prisma.cards.findFirst({
@@ -28,7 +28,7 @@ router.post('/upgrade', au, async (req, res, next) => {
     }
 
     if (upgradecard.userId !== req.user.userId) {
-      return res.status(404).json({ Message: '다른 유저의 카드를 강화할 수 없슨니다.' });
+      return res.status(400).json({ Message: '다른 유저의 카드를 강화할 수 없슨니다.' });
     }
 
     // 재료카드 찾기
@@ -40,7 +40,7 @@ router.post('/upgrade', au, async (req, res, next) => {
       },
     });
     if (!materialcard) {
-      return res.status(404).json({ Message: '같은 강화 레벨의 동일한 카드가 필요합니다.' });
+      return res.status(400).json({ Message: '같은 강화 레벨의 동일한 카드가 필요합니다.' });
     }
 
     // 강화 성공/실패
