@@ -80,8 +80,9 @@ model Cards {
   cardId Int @id @default(autoincrement())
   userId Int
   clubId Int
-  cardNumber Int
   cardCode Int
+  card_enhancement Int @default(0)
+  cardNumber Int
 
   club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
 
@@ -91,7 +92,6 @@ model Cards {
 model CardModel {
   cardCode Int @id @default(autoincrement())
   cardName String
-  card_enhancement Int @default(0)
   speed Int
   shoot_accuracy Int
   shoot_power Int
