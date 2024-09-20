@@ -30,6 +30,12 @@ enum positionType {
   manager
 }
 
+enum stateType {
+  inventory
+  formation
+  transfer
+}
+
 // 스키마 모델링
 model Users {
   userId Int @id @default(autoincrement())
@@ -83,7 +89,7 @@ model Cards {
   cardId Int @id @default(autoincrement())
   userId Int
   clubId Int
-  equipState Boolean @default(false)
+  state stateType @default(inventory)
   card_enhancement Int @default(0)
   cardNumber Int
   cardCode Int
@@ -112,4 +118,10 @@ model CardModel {
   type positionType
 
   @@map("CardModel")
+}
+
+model transfer{
+  transferId Int @id @default(autoincrement())
+  cardId Int
+  price Int
 }

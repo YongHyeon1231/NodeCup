@@ -107,7 +107,7 @@ router.get('/club/:clubName', async (req, res, next) => {
         lose: searchClub.lose,
       };
     }
-    return res.status(400).json({ data: ClubInfo });
+    return res.status(200).json({ data: ClubInfo });
   } catch (error) {
     next(error);
   }

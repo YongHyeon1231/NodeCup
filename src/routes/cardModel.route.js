@@ -5,7 +5,7 @@ const router = express.Router();
 
 // 카드 생성 API
 
-router.post('/cardmodel', async (req, res, next) => {
+router.post('/cardModel', async (req, res, next) => {
     try{
         let cardData = req.body
 

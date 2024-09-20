@@ -1,3 +1,4 @@
+import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
 import au from '../middlewares/auths/user-auth.middleware.js';
 
@@ -12,8 +13,11 @@ router.get('/cards', au, async (req, res, next) => {
       },
       select: {
         cardName: true,
+        equipState: true,
         speed: true,
+        card_enhancement: true,
         shoot_accuracy: true,
+        cardNumber: true,
         shoot_power: true,
         defense: true,
         stamina: true,
@@ -25,3 +29,5 @@ router.get('/cards', au, async (req, res, next) => {
     next(error);
   }
 })
+
+export default router;
