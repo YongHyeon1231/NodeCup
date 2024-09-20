@@ -10,10 +10,10 @@ const goldprice = 1000;
 // 감독카드 가격 (캐시)
 const cashprice = 1000;
 
-// 캐치 충전 제한 (최소)
+// 캐치 한번에 충전량 제한 (최소)
 const mincash = 1000;
 
-// 캐치 충전 제한 (최대)
+// 캐치 한번에 충전량 제한 (최대)
 const maxcash = 100000;
 
 // 카드 랜덤 뽑기
@@ -26,21 +26,23 @@ router.post('/shop/gacha', au, async (req, res, next) => {
     });
 
     // 유효성 검사
+    // 카드 아이디 타입 검사
     if (type !== 'player' && type !== 'manager') {
       return res.status(400).json({ Message: '올바른 카드타입(player,manager)을 입력하세요.' });
     }
 
+    // count 타입 검사
     if (isNaN(count)) {
       return res.status(400).json({ Message: '개수(count)는 숫자를 입력하세요.' });
     }
 
+    // 준비된 카드 모델 존재 여부 검사
     const countplayer = await prisma.cardModel.count({
       where: { type: 'player' },
     });
     if (countplayer === 0 && type === 'player') {
       return res.status(503).json({ Message: '아직 선수카드 모델을 준비중입니다.' });
     }
-
     const countmanager = await prisma.cardModel.count({
       where: { type: 'manager' },
     });

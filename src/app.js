@@ -3,9 +3,10 @@ import dotenv from 'dotenv';
 
 import usersRouter from './routes/users.route.js';
 import shopRouter from './routes/shop.route.js';
+import upgradiong from './routes/upgrade.route.js';
 import cardRouter from './routes/card.route.js';
 import cardModelRouter from './routes/cardModel.route.js';
-import upgrading from './routes/upgrade.route.js';
+import formationsRouter from './routes/formations.route.js';
 
 import ErrorHandlingMiddleware from './middlewares/error-handling.middleware.js';
 
@@ -19,7 +20,15 @@ const PORT = process.env.DATABASE_PORT;
 
 app.use(express.json()); // body parser 역할
 
-app.use('/api', [usersRouter, clubrouter, shopRouter, cardRouter, cardModelRouter, upgrading]);
+app.use('/api', [
+  usersRouter,
+  clubrouter,
+  shopRouter,
+  cardRouter,
+  cardModelRouter,
+  formationsRouter,
+  upgradiong,
+]);
 
 app.use(ErrorHandlingMiddleware);
 
