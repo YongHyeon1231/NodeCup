@@ -4,12 +4,12 @@ const signUpSchema = Joi.object({
   userName: Joi.string().lowercase().min(2).max(10).required(),
   email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com'] } }),
   password: Joi.string().min(6).max(20).required(),
-});
+}).unknown(true);
 
 const signInSchema = Joi.object({
   email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com'] } }),
   password: Joi.string().min(6).max(20).required(),
-});
+}).unknown(true);
 
 const userValidatorJoi = {
   signUpValidation: async (req, res, next) => {

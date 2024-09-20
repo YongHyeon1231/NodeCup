@@ -6,7 +6,7 @@ import fv from '../middlewares/validators/formationsValidator.middleware.js';
 const router = express.Router();
 
 // 포메이션 팀 카드 넣기 validator만들기 생각
-router.post('/formations/equip', au, fv.equipCodeBodyValidation , async (req, res, next) => {
+router.post('/formations/equip', au, fv.equipCodeBodyValidation, async (req, res, next) => {
   try {
     const { cardNumber, lineUp, position } = req.body;
     const userId = req.user.userId;
@@ -58,9 +58,6 @@ router.post('/formations/equip', au, fv.equipCodeBodyValidation , async (req, re
       updatedTeamTotalStat = AddCal(updatedTeamTotalStat, inputCard);
     }
 
-    
-
-
     let msg;
 
     await prisma.$transaction(async (tx) => {
@@ -99,12 +96,12 @@ router.post('/formations/equip', au, fv.equipCodeBodyValidation , async (req, re
             userId: userId,
             clubId: userClub.clubId,
             cardNumber: inputCard.cardNumber,
-            cardId: inputCard.cardId
+            cardId: inputCard.cardId,
           },
           data: {
-            state: 'formation'
-          }
-        })
+            state: 'formation',
+          },
+        });
 
         // 포메이션 슬롯 update
         const updateFormationCard = await tx.formations.update({
@@ -218,7 +215,7 @@ router.post('/formations/unequip', au, fv.unequipCodeBodyValidation, async (req,
     }
 
     // 장착 되어 있지 않은 카드라면
-    console.log("inpuCard.state => ", inputCard.state)
+    console.log('inpuCard.state => ', inputCard.state);
     if (inputCard.state !== 'formation') {
       return res.status(401).json({ message: 'inputCard => 장착된 카드가 아닙니다.' });
     }
