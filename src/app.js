@@ -8,10 +8,9 @@ import cardRouter from './routes/card.route.js';
 import cardModelRouter from './routes/cardModel.route.js';
 import formationsRouter from './routes/formations.route.js';
 import clubRouter from './routes/club.route.js';
+import transferRouter from './routes/transfer.route.js';
 
 import ErrorHandlingMiddleware from './middlewares/error-handling.middleware.js';
-
-
 
 // .env 파일을 읽어서 process.env에 추가합니다.
 dotenv.config();
@@ -29,6 +28,7 @@ app.use('/api', [
   cardModelRouter,
   formationsRouter,
   upgradingRouter,
+  transferRouter,
 ]);
 
 app.use(ErrorHandlingMiddleware);
