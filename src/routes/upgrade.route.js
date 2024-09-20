@@ -87,7 +87,11 @@ router.post('/upgrading', au, async (req, res, next) => {
         return card;
       });
 
-      return res.status(201).json({ upgradedcard });
+      return res.status(201).json({
+        Message: '강화에 성공하여 재료카드가 소진되었습니다',
+        upgradedcard,
+        materialcard,
+      });
     } else {
       await prisma.$transaction(async (tx) => {
         await tx.cards.delete({
