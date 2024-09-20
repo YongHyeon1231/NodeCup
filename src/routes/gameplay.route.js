@@ -45,9 +45,37 @@ router.post('/gameplay', au, async (req, res, next) => {
       opponentFormations[Math.floor(Math.random() * opponentFormations.length)];
     const opponentTotalStat = opponentFormation.teamTotalStat;
 
-    // 점수 계산
-    const userScore = Math.floor(Math.random() * 5) + 1; // 1에서 5 사이의 랜덤 점수
-    const opponentScore = Math.floor(Math.random() * 5) + 1; // 1에서 5 사이의 랜덤 점수
+    // 스탯에 따른 점수 계산
+    const statDifference = userTotalStat - opponentTotalStat;
+    const baseScore = Math.floor(Math.random() * 3) + 1; // 기본 점수는 1~3
+    let userScore = baseScore;
+    let opponentScore = baseScore;
+
+    // 스탯 차이로 인한 점수 증가
+    if (statDifference > 0) {
+      // 스탯 차이가 10 이상 일 때 내 점수 추가
+      userScore += Math.floor(statDifference / 10);
+    } else {
+      // 상대방의 스탯이 높을 경우 상대 점수 증가
+      opponentScore += Math.floor(-statDifference / 10);
+    }
+
+    // 최종 점수는 최소 1점에서 최대 5점으로 제한
+    userScore = Math.min(Math.max(userScore, 1), 5);
+    opponentScore = Math.min(Math.max(opponentScore, 1), 5);
+
+    // 동점 방지 (동점일 경우 점수 조정)
+    if (userScore === opponentScore) {
+      if (Math.random() > 0.5) {
+        userScore++; // 내 점수 증가
+      } else {
+        opponentScore++; // 상대방 점수 증가
+      }
+
+      // 최종 점수는 여전히 5점을 넘지 않도록 제한
+      userScore = Math.min(userScore, 5);
+      opponentScore = Math.min(opponentScore, 5);
+    }
 
     let result;
     let mmrChange = 10; // 기본 MMR 변화량
@@ -57,7 +85,7 @@ router.post('/gameplay', au, async (req, res, next) => {
     let earnedGold, mmrChangeAmount;
 
     if (userScore > opponentScore) {
-      result = `${userClub.clubName}님이 승리하였습니다! ${userScore} - ${opponentScore}`;
+      result = `${userClub.clubName}님이 승리하였습니다! 스코어 ${userScore} - ${opponentScore} 로 이겼습니다!`;
       earnedGold = 10000;
       mmrChangeAmount = userClub.win > 0 ? mmrChange + 5 : mmrChange;
 
@@ -80,7 +108,7 @@ router.post('/gameplay', au, async (req, res, next) => {
 
       result += ` ${earnedGold} 골드를 획득하였습니다! MMR이 ${mmrChangeAmount} 상승하였습니다!`;
     } else {
-      result = `${opponentClub.clubName}님이 승리하였습니다! ${userScore} - ${opponentScore}`;
+      result = `${opponentClub.clubName}님이 승리하였습니다! 스코어 ${userScore} - ${opponentScore} 로 이겼습니다!`;
       earnedGold = 5000;
       mmrChangeAmount = userClub.lose > 0 ? mmrChange + 5 : mmrChange;
 
@@ -108,37 +136,6 @@ router.post('/gameplay', au, async (req, res, next) => {
       message: result,
       opponent: opponentClub.clubName,
     });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// 클럽 랭킹 정보
-router.get('/rankings', async (req, res, next) => {
-  try {
-    const rankings = await prisma.club.findMany({
-      select: {
-        clubName: true,
-        MMR: true,
-        win: true,
-        lose: true,
-      },
-      orderBy: {
-        MMR: 'desc',
-      },
-    });
-
-    if (rankings.length === 0) {
-      return res.status(404).json({ message: '랭킹 정보를 찾을 수 없습니다.' });
-    }
-
-    // 순위 추가
-    const rankingsWithRank = rankings.map((club, index) => ({
-      rank: index + 1,
-      ...club,
-    }));
-
-    return res.status(200).json(rankingsWithRank);
   } catch (error) {
     next(error);
   }
