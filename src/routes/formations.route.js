@@ -34,6 +34,11 @@ router.post('/formations/equip', au, fv.equipCodeBodyValidation , async (req, re
       return res.status(401).json({ message: '해당 카드는 이적 시장에 올라와져 있습니다.' });
     }
 
+    // 지금 문제 : 카드 슬롯의 state가 formation이어도 position만 다르면 장착이 댐
+    if (inputCard.state === 'formation') {
+      return res.status(401).json({ message: '해당 카드는 다른 Position에 장착되어 있습니다.' });
+    }
+
     // 현재 상태 : cards가 인벤토리에 있거나 이미 장착된 카드
 
     // 장착되어 있는 카드 포메이션 찾기
@@ -52,6 +57,9 @@ router.post('/formations/equip', au, fv.equipCodeBodyValidation , async (req, re
     } else if (!preformationCard) {
       updatedTeamTotalStat = AddCal(updatedTeamTotalStat, inputCard);
     }
+
+    
+
 
     let msg;
 
