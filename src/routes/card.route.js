@@ -12,8 +12,9 @@ router.get('/cards', au, async (req, res, next) => {
         userId: req.user.userId,
       },
       select: {
+        state: true,
         cardName: true,
-        equipState: true,
+        state: true,
         speed: true,
         card_enhancement: true,
         shoot_accuracy: true,
@@ -21,6 +22,7 @@ router.get('/cards', au, async (req, res, next) => {
         shoot_power: true,
         defense: true,
         stamina: true,
+        type: true,
       }
     })
 

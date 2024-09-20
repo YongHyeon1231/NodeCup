@@ -100,6 +100,9 @@ model Cards {
   shoot_power Int
   defense Int
   stamina Int
+  type positionType
+
+  transfer Transfer?
 
   club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
 
@@ -120,8 +123,12 @@ model CardModel {
   @@map("CardModel")
 }
 
-model transfer{
+model Transfer{
   transferId Int @id @default(autoincrement())
-  cardId Int
+  cardId Int @unique
   price Int
+
+  cards Cards @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+
+  @@map("Transfer")
 }
