@@ -1,4 +1,3 @@
-import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
 import au from '../middlewares/auths/user-auth.middleware.js';
 
@@ -25,5 +24,3 @@ router.get('/cards', au, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-});
-export default router;
