@@ -30,13 +30,20 @@ enum positionType {
   manager
 }
 
+enum stateType {
+  inventory
+  formation
+  transfer
+}
+
 // 스키마 모델링
 model Users {
   userId Int @id @default(autoincrement())
   userName String
   email String @unique
   password String
-
+  isGM Boolean @default(false)
+  
   club Club? // 1:1 club이 삭제되도 Users는 남게
 
   @@map("Users")
@@ -82,7 +89,7 @@ model Cards {
   cardId Int @id @default(autoincrement())
   userId Int
   clubId Int
-  equipState Boolean @default(false)
+  state stateType @default(inventory)
   card_enhancement Int @default(0)
   cardNumber Int
   cardCode Int
@@ -93,6 +100,9 @@ model Cards {
   shoot_power Int
   defense Int
   stamina Int
+  type positionType
+
+  transfer Transfer?
 
   club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
 
@@ -111,4 +121,14 @@ model CardModel {
   type positionType
 
   @@map("CardModel")
+}
+
+model Transfer{
+  transferId Int @id @default(autoincrement())
+  cardId Int @unique
+  price Int
+
+  cards Cards @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+
+  @@map("Transfer")
 }
