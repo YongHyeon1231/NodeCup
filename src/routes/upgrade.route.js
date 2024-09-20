@@ -35,7 +35,7 @@ router.post('/upgrading', au, async (req, res, next) => {
     }
 
     // 카드 장착 여부 검사
-    if (upgradecard.equipState) {
+    if (upgradecard.equipState === "formaiton") {
       return res.status(400).json({
         Message: '포메이션에 장착중인 카드는 강화할 수 없습니다. 장착을 해제하고 시도해주세요',
       });

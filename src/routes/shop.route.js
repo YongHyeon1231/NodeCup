@@ -31,6 +31,18 @@ router.post('/shop/gacha', au, async (req, res, next) => {
     if (allCards.length === 0) {
       return res.status(503).json({ message: `아직 ${type} 카드 모델을 준비중입니다.` });
     }
+
+    // [type === 'player' ? 'gold' : 'cash']: {
+    //   decrement: type === 'player' ? goldprice * count : cashprice * count,
+    // },
+    if (type === 'player' && goldprice * count > club.gold) {
+      return res.status(400).json({message: `골드가 ${(goldprice*count) - club.gold}원만큼 부족합니다.`});
+    }
+
+    if (type === 'manager' && cashprice * count > club.cash) {
+      return res.status(400).json({message: `캐시가 ${(cashprice*count) - club.cash}원만큼 부족합니다.`});
+    }
+
     const cards = [];
     // 카드 생성 및 골드/캐시 차감
     await prisma.$transaction(async (tx) => {
