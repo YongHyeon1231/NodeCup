@@ -36,7 +36,8 @@ model Users {
   userName String
   email String @unique
   password String
-
+  isGM Boolean @default(false)
+  
   club Club? // 1:1 club이 삭제되도 Users는 남게
 
   @@map("Users")
