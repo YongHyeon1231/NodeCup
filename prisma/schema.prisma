@@ -64,7 +64,9 @@ model Formations {
   formationId Int @id @default(autoincrement())
   userId Int
   clubId Int
-  cardId Int
+  card_enhancement Int
+  cardName String
+  cardNumber Int
   teamTotalStat Int
 
   // enum
@@ -80,6 +82,7 @@ model Cards {
   cardId Int @id @default(autoincrement())
   userId Int
   clubId Int
+  equipState Boolean @default(false)
   card_enhancement Int @default(0)
   cardNumber Int
   cardCode Int
