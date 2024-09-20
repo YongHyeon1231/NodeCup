@@ -71,7 +71,10 @@ router.post('/transfer/sell', au, async (req, res, next) => {
     });
     const registeredcard = { ...transfercard, ...card };
 
-    return res.status(201).json({ registeredcard });
+    return res.status(201).json({
+      Message: `이적시장에 ${card.card_enhancement}강 ${card.cardName}카드가 등록되었습니다!`,
+      registeredcard,
+    });
   } catch (error) {
     next(error);
   }
@@ -149,7 +152,10 @@ router.patch('/transfer/purchase', au, async (req, res, next) => {
       });
     });
 
-    return res.status(201).json({ card });
+    return res.status(201).json({
+      Messaeg: `이적시장에서 ${card.card_enhancement}강 ${card.cardName}카드를 구매하였습니다!`,
+      card,
+    });
   } catch (error) {
     next(error);
   }
@@ -158,6 +164,8 @@ router.patch('/transfer/purchase', au, async (req, res, next) => {
 // 이적시장 조회
 router.get('/transfer', au, async (req, res, next) => {
   try {
+    const { min, max } = req.body;
+
     // 클럽 존재 여부 검사
     const club = await prisma.club.findFirst({
       where: { userId: req.user.userId },
@@ -167,6 +175,12 @@ router.get('/transfer', au, async (req, res, next) => {
     }
 
     const transferCard = await prisma.transfer.findMany({
+      where: {
+        price: {
+          gte: min,
+          lte: max,
+        },
+      },
       include: {
         cards: {
           select: {
@@ -184,6 +198,63 @@ router.get('/transfer', au, async (req, res, next) => {
     });
 
     return res.status(201).json({ transferCard });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 이적시장 판매 등록 취소
+router.delete('/transfer/sell', au, async (req, res, next) => {
+  try {
+    const { transferId } = req.body;
+
+    // club 존재 여부
+    const club = await prisma.club.findFirst({
+      where: { userId: req.user.userId },
+    });
+    if (!club) {
+      return res.status(404).json({ Message: '클럽을 먼저 생성해 주세요.' });
+    }
+
+    // 이적시장 아이디 유효성 검사
+    if (isNaN(transferId)) {
+      return res
+        .status(400)
+        .json({ Message: '올바른 형식의 이적시장 아이디를 입력하세요. (숫자를 입력해주세요)' });
+    }
+    const transfer = await prisma.transfer.findFirst({
+      where: { transferId: transferId },
+    });
+    if (!transfer) {
+      return res.status(400).json({ Message: '존재하지 않는 이적시장 아이디 입니다.' });
+    }
+
+    const card = await prisma.cards.findFirst({
+      where: { cardId: transfer.cardId },
+    });
+
+    // 카드 소유권 여부 검사
+    if (card.userId !== req.user.userId) {
+      return res.status(403).json({ Message: '다른 유저의 카드를 등록취소할 수 없습니다.' });
+    }
+
+    // 이적시장에서 카드 등록 취소
+    await prisma.$transaction(async (tx) => {
+      await tx.cards.update({
+        where: { cardId: transfer.cardId },
+        data: { state: 'inventory' },
+      });
+
+      await tx.transfer.delete({
+        where: { transferId: transferId },
+      });
+    });
+    const registeredcard = { ...transfer, ...card };
+
+    return res.status(200).json({
+      Message: `이적시장에서 ${card.card_enhancement}강 ${card.cardName}카드의 등록이 취소되었습니다.`,
+      registeredcard,
+    });
   } catch (error) {
     next(error);
   }
