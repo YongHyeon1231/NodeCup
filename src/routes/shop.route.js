@@ -9,7 +9,7 @@ const cashprice = 1000;
 // 캐시 충전량 제한 (최소)
 const mincash = 1000;
 // 캐시 충전량 제한 (최대)
-const maxcash = 100000;
+const maxcash = 1000000;
 // 카드 랜덤 뽑기
 router.post('/shop/gacha', au, async (req, res, next) => {
   try {
@@ -86,10 +86,10 @@ router.patch('/shop/recharge', au, async (req, res, next) => {
       return res.status(400).json({ message: '캐시는 숫자를 입력해주세요.' });
     }
     // 캐시 충전 범위
-    if (cash <= mincash || cash >= maxcash) {
+    if (cash < mincash || cash > maxcash) {
       return res
         .status(400)
-        .json({ message: '캐시는 한번에 최소 1000원 최대 100만원까지 충전이 가능합니다.' });
+        .json({ message: `캐시는 한번에 최소 ${mincash}원 최대 ${maxcash/10000}만원까지 충전이 가능합니다.` });
     }
     // 충전
     const club = await prisma.club.findFirst({

@@ -9,6 +9,7 @@ import cardModelRouter from './routes/cardModel.route.js';
 import formationsRouter from './routes/formations.route.js';
 import clubRouter from './routes/club.route.js';
 import gameplayRouter from './routes/gameplay.route.js';
+import transferRouter from './routes/transfer.route.js';
 
 import ErrorHandlingMiddleware from './middlewares/error-handling.middleware.js';
 
@@ -29,6 +30,7 @@ app.use('/api', [
   formationsRouter,
   upgradingRouter,
   gameplayRouter,
+  transferRouter,
 ]);
 
 app.use(ErrorHandlingMiddleware);
