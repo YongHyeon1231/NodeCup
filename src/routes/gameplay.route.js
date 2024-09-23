@@ -124,6 +124,9 @@ router.post('/gameplay', au, async (req, res, next) => {
       // userScore = Math.min(userScore, 5);
       // opponentScore = Math.min(opponentScore, 5);
       //## 최성원 삭제 (불가능한 상황: 4:3이 최대)
+      // 최종 점수는 여전히 5점을 넘지 않도록 제한
+      userScore = Math.min(userScore, 5);
+      opponentScore = Math.min(opponentScore, 5);
     }
 
     let result;
