@@ -46,7 +46,7 @@ model Users {
   
   club Club? // 1:1 club이 삭제되도 Users는 남게
 
-  @@map("Users")
+  @@map("users")
 }
 
 model Club {
@@ -62,16 +62,16 @@ model Club {
   users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
   formations Formations[]
-  cards Cards[]
+  cards Card[]
 
-  @@map("Club")
+  @@map("club")
 }
 
 model Formations {
   formationId Int @id @default(autoincrement())
   userId Int
   clubId Int
-  card_enhancement Int
+  cardEnhancement Int @map("card_enhancement")
   cardName String
   cardNumber Int
   teamTotalStat Int
@@ -82,22 +82,22 @@ model Formations {
 
   club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
 
-  @@map("Formations")
+  @@map("formations")
 }
 
-model Cards {
+model Card {
   cardId Int @id @default(autoincrement())
   userId Int
   clubId Int
   state stateType @default(inventory)
-  card_enhancement Int @default(0)
+  cardEnhancement Int @default(0) @map("card_enhancement")
   cardNumber Int
   cardCode Int
 
   cardName String
   speed Int
-  shoot_accuracy Int
-  shoot_power Int
+  shootAccuracy Int @map("shoot_accuracy") // 데이터 cards모델의 열과 연관이 되는 이름
+  shootPower Int @map("shoot_power")
   defense Int
   stamina Int
   type positionType
@@ -106,7 +106,7 @@ model Cards {
 
   club Club @relation(fields: [clubId], references: [clubId], onDelete: Cascade)
 
-  @@map("Cards")
+  @@map("cards") // 데이터 모델의 Table이름
 }
 
 model CardModel {
@@ -114,13 +114,13 @@ model CardModel {
   cardName String
   // card_enhancement Int @default(0)
   speed Int
-  shoot_accuracy Int
-  shoot_power Int
+  shootAccuracy Int @map("shoot_accuracy")
+  shootPower Int @map("shoot_power")
   defense Int
   stamina Int
   type positionType
 
-  @@map("CardModel")
+  @@map("cardModel")
 }
 
 model Transfer{
@@ -128,7 +128,7 @@ model Transfer{
   cardId Int @unique
   price Int
 
-  cards Cards @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
+  cards Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
 
-  @@map("Transfer")
+  @@map("transfer")
 }
