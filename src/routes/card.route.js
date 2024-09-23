@@ -23,13 +23,13 @@ router.get('/cards', au, async (req, res, next) => {
         defense: true,
         stamina: true,
         type: true,
-      }
-    })
+      },
+    });
 
-    return res.status(200).json({ data : cards })
+    return res.status(200).json({ data: cards });
   } catch (error) {
     next(error);
   }
-})
+});
 
 export default router;
