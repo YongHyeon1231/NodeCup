@@ -11,9 +11,9 @@ router.use(userAuthMiddleware)
 router.post('/cardModel', async (req, res, next) => {
     try {
         // 현재 사용자가 운영자인지 확인
-        // if (!req.user.isGM) {
-        //     return res.status(400).json({ message: "카드를 생성할 권한이 없습니다." })
-        // }
+        if (!req.user.isGM) {
+            return res.status(400).json({ message: "카드를 생성할 권한이 없습니다." })
+        }
 
         let cardData = req.body
 
@@ -87,9 +87,9 @@ router.put('/cardModel/:cardCode', async (req, res, next) => {
         });
 
         // 카드가 존재하지 않는다면
-        // if (!card) {
-        //     return res.status(400).json({ error: "존재하지 않는 선수입니다." });
-        // }
+        if (!card) {
+            return res.status(400).json({ error: "존재하지 않는 선수입니다." });
+        }
 
         await prisma.cardModel.update({
             where: {
