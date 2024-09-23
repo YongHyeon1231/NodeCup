@@ -11,9 +11,9 @@ router.use(userAuthMiddleware);
 router.post('/cardModel', async (req, res, next) => {
   try {
     // 현재 사용자가 운영자인지 확인
-    // if (!req.user.isGM) {
-    //     return res.status(400).json({ message: "카드를 생성할 권한이 없습니다." })
-    // }
+    if (!req.user.isGM) {
+      return res.status(400).json({ message: '카드를 생성할 권한이 없습니다.' });
+    }
 
     let cardData = req.body;
 
