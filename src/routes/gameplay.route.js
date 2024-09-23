@@ -1,8 +1,9 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 
 const router = express.Router();
+router.use(userAuthMiddleware);
 
 // MMR 변화 폭 기준 설정
 const mmrrange = 100; // 최성원 추가 (ELO 방식으로 변경)
@@ -11,7 +12,7 @@ const mmrrange = 100; // 최성원 추가 (ELO 방식으로 변경)
 const championMMR = 1200; // 최성원 추가 (시즌제 추가)
 
 // 게임플레이 API
-router.post('/gameplay', au, async (req, res, next) => {
+router.post('/gameplay', async (req, res, next) => {
   const { lineUp } = req.body;
 
   try {
