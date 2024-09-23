@@ -16,17 +16,17 @@ router.get('/cards', au, async (req, res, next) => {
         cardName: true,
         state: true,
         speed: true,
-        card_enhancement: true,
-        shoot_accuracy: true,
+        cardEnhancement: true,
+        shootAccuracy: true,
         cardNumber: true,
-        shoot_power: true,
+        shootPower: true,
         defense: true,
         stamina: true,
         type: true,
       }
     })
 
-    return res.status(200).json({ data : cards })
+    return res.status(200).json({ data: cards })
   } catch (error) {
     next(error);
   }
