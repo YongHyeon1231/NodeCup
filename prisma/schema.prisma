@@ -130,5 +130,18 @@ model Transfer{
 
   cards Card @relation(fields: [cardId], references: [cardId], onDelete: Cascade)
 
+
   @@map("transfer")
+}
+
+model Champion {
+  ChampionId Int @id @default(autoincrement())
+  Season Int
+  clubName String
+  win Int
+  lose Int
+  winRate Float
+  MMR Int
+
+  @@map("hampion")
 }
