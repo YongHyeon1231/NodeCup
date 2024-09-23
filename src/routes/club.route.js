@@ -164,4 +164,18 @@ router.get('/rankings', async (req, res, next) => {
   }
 });
 
+//시즌별 Champion 조회 api
+router.get('/champion', async (req, res, next) => {
+  try {
+    const championrank = await prisma.champion.findMany({});
+    if (!championrank) {
+      return res.status(401).json({ message: `아직 최초의 챔피언이 탄생하지 않았습니다.` });
+    }
+
+    return res.status(200).json({ championrank });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
