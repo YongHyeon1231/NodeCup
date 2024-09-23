@@ -113,7 +113,7 @@ router.get('/club/:clubName', async (req, res, next) => {
   }
 });
 
-router.delete('/club', au, async (req, res, next) => {
+router.delete('/club', userAuthMiddleware, async (req, res, next) => {
   try {
     const { userId } = req.user;
 
