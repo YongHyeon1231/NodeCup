@@ -1,20 +1,33 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 
 const router = express.Router();
 
-// 강화 1단계 상승시 능력치 상승량 (10%)
-const upgrade_stat_up = 0.1;
+router.use(userAuthMiddleware);
+router.use('/upgrading', router);
 
-// 강화 0단계 → 1단계 성공 확률 (100%)
-const upgrade_percentage_zero = 1;
+// 중요 데이터 및 자주쓰는 표현
+class upgradeData {
+  constructor() {
+    // 강화 1단계 상승시 능력치 상승량 (10%)
+    this.statup = 0.1;
 
-// 강화 1단계 상승시 강화 성공 확률 하락량 (10%)
-const upgrade_percentage_down = 0.1;
+    // 강화 0단계 → 1단계 성공 확률 (100%)
+    this.firstpercentage = 1;
+
+    // 강화 1단계 상승시 강화 성공 확률 하락량 (10%)
+    this.percentagedown = 0.1;
+
+    // 자주쓰는 표현
+    this.INVENTORY = 'inventory';
+    this.TRANSFER = 'transfer';
+  }
+}
+const upgradedata = new upgradeData();
 
 // 선수 카드 강화
-router.post('/upgrading/one', au, async (req, res, next) => {
+router.post('/one', async (req, res, next) => {
   try {
     const { cardId } = req.body;
 
@@ -33,7 +46,7 @@ router.post('/upgrading/one', au, async (req, res, next) => {
     }
 
     // 카드 인벤토리 여부 검사
-    if (upgradecard.state !== 'inventory') {
+    if (upgradecard.state !== upgradedata.INVENTORY) {
       return res.status(400).json({
         Message: '인벤토리에 있는 카드만 강화가 가능합니다. 장착을 해제하고 시도해주세요',
       });
@@ -50,7 +63,7 @@ router.post('/upgrading/one', au, async (req, res, next) => {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
         card_enhancement: upgradecard.card_enhancement,
-        state: 'inventory',
+        state: upgradedata.INVENTORY,
         NOT: { cardId: cardId },
       },
     });
@@ -62,7 +75,7 @@ router.post('/upgrading/one', au, async (req, res, next) => {
 
     // 강화 성공 확률
     const percentage =
-      upgrade_percentage_zero - upgradecard.card_enhancement * upgrade_percentage_down;
+      upgradedata.firstpercentage - upgradecard.card_enhancement * upgradedata.percentagedown;
 
     // 능력치 기준 모델
     const cardmodel = await prisma.cardModel.findFirst({
@@ -85,11 +98,12 @@ router.post('/upgrading/one', au, async (req, res, next) => {
           where: { cardId: upgradecard.cardId },
           data: {
             card_enhancement: upgradecard.card_enhancement + 1,
-            speed: upgradecard.speed + cardmodel.speed * upgrade_stat_up,
-            shoot_accuracy: upgradecard.shoot_accuracy + cardmodel.shoot_accuracy * upgrade_stat_up,
-            shoot_power: upgradecard.shoot_power + cardmodel.shoot_power * upgrade_stat_up,
-            defense: upgradecard.defense + cardmodel.defense * upgrade_stat_up,
-            stamina: upgradecard.stamina + cardmodel.stamina * upgrade_stat_up,
+            speed: upgradecard.speed + cardmodel.speed * upgradedata.statup,
+            shoot_accuracy:
+              upgradecard.shoot_accuracy + cardmodel.shoot_accuracy * upgradedata.statup,
+            shoot_power: upgradecard.shoot_power + cardmodel.shoot_power * upgradedata.statup,
+            defense: upgradecard.defense + cardmodel.defense * upgradedata.statup,
+            stamina: upgradecard.stamina + cardmodel.stamina * upgradedata.statup,
           },
         });
 
@@ -119,7 +133,7 @@ router.post('/upgrading/one', au, async (req, res, next) => {
 });
 
 // 선수 카드 다중 강화
-router.post('/upgrading/every', au, async (req, res, next) => {
+router.post('/every', async (req, res, next) => {
   try {
     const { cardId } = req.body;
 
@@ -139,7 +153,7 @@ router.post('/upgrading/every', au, async (req, res, next) => {
     }
 
     // 카드 인벤토리 여부 검사
-    if (upgradecard.state !== 'inventory') {
+    if (upgradecard.state !== upgradedata.INVENTORY) {
       return res.status(400).json({
         Message: '인벤토리에 있는 카드만 강화가 가능합니다. 장착을 해제하고 시도해주세요',
       });
@@ -156,7 +170,7 @@ router.post('/upgrading/every', au, async (req, res, next) => {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
         card_enhancement: upgradecard.card_enhancement,
-        state: 'inventory',
+        state: upgradedata.INVENTORY,
       },
     });
     if (materialcards.length < 2) {
@@ -167,7 +181,7 @@ router.post('/upgrading/every', au, async (req, res, next) => {
 
     // 강화 성공 확률
     const percentage =
-      upgrade_percentage_zero - upgradecard.card_enhancement * upgrade_percentage_down;
+      upgradedata.firstpercentage - upgradecard.card_enhancement * upgradedata.percentagedown;
 
     // 능력치 기준 모델
     const cardmodel = await prisma.cardModel.findFirst({
@@ -195,13 +209,13 @@ router.post('/upgrading/every', au, async (req, res, next) => {
             where: { cardId: materialcards[2 * i].cardId },
             data: {
               card_enhancement: materialcards[2 * i].card_enhancement + 1,
-              speed: materialcards[2 * i].speed + cardmodel.speed * upgrade_stat_up,
+              speed: materialcards[2 * i].speed + cardmodel.speed * upgradedata.statup,
               shoot_accuracy:
-                materialcards[2 * i].shoot_accuracy + cardmodel.shoot_accuracy * upgrade_stat_up,
+                materialcards[2 * i].shoot_accuracy + cardmodel.shoot_accuracy * upgradedata.statup,
               shoot_power:
-                materialcards[2 * i].shoot_power + cardmodel.shoot_power * upgrade_stat_up,
-              defense: materialcards[2 * i].defense + cardmodel.defense * upgrade_stat_up,
-              stamina: materialcards[2 * i].stamina + cardmodel.stamina * upgrade_stat_up,
+                materialcards[2 * i].shoot_power + cardmodel.shoot_power * upgradedata.statup,
+              defense: materialcards[2 * i].defense + cardmodel.defense * upgradedata.statup,
+              stamina: materialcards[2 * i].stamina + cardmodel.stamina * upgradedata.statup,
             },
           });
 

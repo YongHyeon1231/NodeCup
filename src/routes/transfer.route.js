@@ -1,17 +1,30 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 
 const router = express.Router();
 
-// 수수료 비율 (15%)
-const charge = 0.15;
+router.use(userAuthMiddleware);
+router.use('/transfer', router);
 
-// 이적시장 카드 최소 가격
-const minprice = 100;
+// 중요 데이터 및 자주쓰는 표현
+class transferData {
+  constructor() {
+    // 수수료 비율 (15%)
+    this.charge = 0.15;
+
+    // 이적시장 카드 최소 가격
+    this.minprice = 100;
+
+    // 자주쓰는 표현
+    this.INVENTORY = 'inventory';
+    this.TRANSFER = 'transfer';
+  }
+}
+const transferdata = new transferData();
 
 // 이적시장 판매 등록
-router.post('/transfer/sell', au, async (req, res, next) => {
+router.post('/sell', async (req, res, next) => {
   try {
     const { cardId, price } = req.body;
 
@@ -24,9 +37,9 @@ router.post('/transfer/sell', au, async (req, res, next) => {
     }
 
     // 가격 유효성 검사
-    if (isNaN(price) || price < minprice) {
+    if (isNaN(price) || price < transferdata.minprice) {
       return res.status(400).json({
-        Message: `올바른 형식의 가격을 입력하세요. (${minprice} 이상의 숫자를 입력해주세요)`,
+        Message: `올바른 형식의 가격을 입력하세요. (${transferdata.minprice} 이상의 숫자를 입력해주세요)`,
       });
     }
 
@@ -49,7 +62,7 @@ router.post('/transfer/sell', au, async (req, res, next) => {
     }
 
     // inventory에 있는게 맞는지
-    if (card.state !== 'inventory') {
+    if (card.state !== transferdata.INVENTORY) {
       return res.status(400).json({ Message: '등록하고 싶은 카드는 인벤토리에 있어야합니다.' });
     }
 
@@ -64,7 +77,7 @@ router.post('/transfer/sell', au, async (req, res, next) => {
 
       await tx.cards.update({
         where: { cardId: cardId },
-        data: { state: 'transfer' },
+        data: { state: transferdata.TRANSFER },
       });
 
       return transfer;
@@ -81,7 +94,7 @@ router.post('/transfer/sell', au, async (req, res, next) => {
 });
 
 // 이적시장 구매
-router.patch('/transfer/purchase', au, async (req, res, next) => {
+router.patch('/purchase', async (req, res, next) => {
   try {
     const { transferId } = req.body;
 
@@ -141,7 +154,7 @@ router.patch('/transfer/purchase', au, async (req, res, next) => {
       await tx.club.update({
         where: { clubId: sellclub.clubId },
         data: {
-          gold: sellclub.gold + Math.floor(transfer.price * (1 - charge)),
+          gold: sellclub.gold + Math.floor(transfer.price * (1 - transferdata.charge)),
         },
       });
 
@@ -151,7 +164,7 @@ router.patch('/transfer/purchase', au, async (req, res, next) => {
           userId: req.user.userId,
           clubId: club.clubId,
           cardNumber: nextCardNumber,
-          state: 'inventory',
+          state: transferdata.INVENTORY,
         },
       });
 
@@ -170,7 +183,7 @@ router.patch('/transfer/purchase', au, async (req, res, next) => {
 });
 
 // 이적시장 조회
-router.get('/transfer', au, async (req, res, next) => {
+router.get('/search', async (req, res, next) => {
   try {
     const { min, max } = req.body;
 
@@ -212,7 +225,7 @@ router.get('/transfer', au, async (req, res, next) => {
 });
 
 // 이적시장 판매 등록 취소
-router.delete('/transfer/sell', au, async (req, res, next) => {
+router.delete('/sell', async (req, res, next) => {
   try {
     const { transferId } = req.body;
 
@@ -250,7 +263,7 @@ router.delete('/transfer/sell', au, async (req, res, next) => {
     await prisma.$transaction(async (tx) => {
       await tx.cards.update({
         where: { cardId: transfer.cardId },
-        data: { state: 'inventory' },
+        data: { state: transferdata.INVENTORY },
       });
 
       await tx.transfer.delete({
