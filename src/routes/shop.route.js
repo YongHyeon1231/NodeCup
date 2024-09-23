@@ -73,7 +73,7 @@ router.post('/gacha', async (req, res, next) => {
     }
 
     // 카드 번호 설정
-    const existingCards = await prisma.cards.findMany({
+    const existingCards = await prisma.card.findMany({
       where: { userId: club.userId },
       orderBy: { cardNumber: 'desc' },
       take: 1,
@@ -88,15 +88,15 @@ router.post('/gacha', async (req, res, next) => {
       for (let i = 0; i < count; i++) {
         const randomN = Math.floor(Math.random() * allCards.length);
         const selectedCard = allCards[randomN];
-        const card = await tx.cards.create({
+        const card = await tx.card.create({
           data: {
             clubId: club.clubId,
             userId: club.userId,
             cardCode: selectedCard.cardCode,
             cardName: selectedCard.cardName,
             speed: selectedCard.speed,
-            shoot_accuracy: selectedCard.shoot_accuracy,
-            shoot_power: selectedCard.shoot_power,
+            shootAccuracy: selectedCard.shootAccuracy,
+            shootPower: selectedCard.shootPower,
             defense: selectedCard.defense,
             stamina: selectedCard.stamina,
             cardNumber: nextCardNumber + i,

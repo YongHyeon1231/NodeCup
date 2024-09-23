@@ -38,7 +38,7 @@ router.post('/one', async (req, res, next) => {
         .json({ Message: '올바른 형식의 카드아이디를 입력하세요. (숫자를 입력해주세요)' });
     }
 
-    const upgradecard = await prisma.cards.findFirst({
+    const upgradecard = await prisma.card.findFirst({
       where: { cardId: cardId },
     });
     if (!upgradecard) {
@@ -58,7 +58,7 @@ router.post('/one', async (req, res, next) => {
     }
 
     // 재료 카드 존재 여부 검사
-    const materialcard = await prisma.cards.findFirst({
+    const materialcard = await prisma.card.findFirst({
       where: {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
@@ -88,20 +88,19 @@ router.post('/one', async (req, res, next) => {
     // 강화 시도
     await prisma.$transaction(async (tx) => {
       // 재료카드 소진
-      await tx.cards.delete({
+      await tx.card.delete({
         where: { cardId: materialcard.cardId },
       });
 
       // 강화 성공 시
       if (Math.random() < percentage) {
-        upgradedcard = await tx.cards.update({
+        upgradedcard = await tx.card.update({
           where: { cardId: upgradecard.cardId },
           data: {
             card_enhancement: upgradecard.card_enhancement + 1,
             speed: upgradecard.speed + cardmodel.speed * upgradedata.statup,
-            shoot_accuracy:
-              upgradecard.shoot_accuracy + cardmodel.shoot_accuracy * upgradedata.statup,
-            shoot_power: upgradecard.shoot_power + cardmodel.shoot_power * upgradedata.statup,
+            shootAccuracy: upgradecard.shootAccuracy + cardmodel.shootAccuracy * upgradedata.statup,
+            shootPower: upgradecard.shootPower + cardmodel.shootPower * upgradedata.statup,
             defense: upgradecard.defense + cardmodel.defense * upgradedata.statup,
             stamina: upgradecard.stamina + cardmodel.stamina * upgradedata.statup,
           },
@@ -114,12 +113,12 @@ router.post('/one', async (req, res, next) => {
     });
 
     // cardNumber 정리: 병렬로 처리
-    const cardsort = await prisma.cards.findMany({
+    const cardsort = await prisma.card.findMany({
       where: { userId: req.user.userId },
     });
 
     const sortpromise = cardsort.map((card, index) => {
-      return prisma.cards.update({
+      return prisma.card.update({
         where: { cardId: card.cardId },
         data: { cardNumber: index + 1 },
       });
@@ -145,7 +144,7 @@ router.post('/every', async (req, res, next) => {
     }
 
     // 카드 존재 여부 검사
-    const upgradecard = await prisma.cards.findFirst({
+    const upgradecard = await prisma.card.findFirst({
       where: { cardId: cardId },
     });
     if (!upgradecard) {
@@ -165,7 +164,7 @@ router.post('/every', async (req, res, next) => {
     }
 
     // 재료 카드 존재 여부 검사
-    const materialcards = await prisma.cards.findMany({
+    const materialcards = await prisma.card.findMany({
       where: {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
@@ -198,22 +197,22 @@ router.post('/every', async (req, res, next) => {
     await prisma.$transaction(async (tx) => {
       for (let i = 0; i < tryupgrade; i++) {
         // 재료카드 소진
-        const deletecards = await tx.cards.delete({
+        const deletecards = await tx.card.delete({
           where: { cardId: materialcards[2 * i + 1].cardId },
         });
         deletedcards.push(deletecards);
 
         // 강화 성공 시
         if (Math.random() < percentage) {
-          const successcard = await tx.cards.update({
+          const successcard = await tx.card.update({
             where: { cardId: materialcards[2 * i].cardId },
             data: {
               card_enhancement: materialcards[2 * i].card_enhancement + 1,
               speed: materialcards[2 * i].speed + cardmodel.speed * upgradedata.statup,
-              shoot_accuracy:
-                materialcards[2 * i].shoot_accuracy + cardmodel.shoot_accuracy * upgradedata.statup,
-              shoot_power:
-                materialcards[2 * i].shoot_power + cardmodel.shoot_power * upgradedata.statup,
+              shootAccuracy:
+                materialcards[2 * i].shootAccuracy + cardmodel.shootAccuracy * upgradedata.statup,
+              shootPower:
+                materialcards[2 * i].shootPower + cardmodel.shootPower * upgradedata.statup,
               defense: materialcards[2 * i].defense + cardmodel.defense * upgradedata.statup,
               stamina: materialcards[2 * i].stamina + cardmodel.stamina * upgradedata.statup,
             },
@@ -225,12 +224,12 @@ router.post('/every', async (req, res, next) => {
     });
 
     // cardNumber 정리: 병렬로 처리
-    const cardsort = await prisma.cards.findMany({
+    const cardsort = await prisma.card.findMany({
       where: { userId: req.user.userId },
     });
 
     const sortpromise = cardsort.map((card, index) => {
-      return prisma.cards.update({
+      return prisma.card.update({
         where: { cardId: card.cardId },
         data: { cardNumber: index + 1 },
       });
