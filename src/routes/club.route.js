@@ -1,12 +1,12 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
 import jwt from 'jsonwebtoken';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 
 const router = express.Router();
 
 //클럽생성 api
-router.post('/club', au, async (req, res, next) => {
+router.post('/club', userAuthMiddleware, async (req, res, next) => {
   try {
     const { clubName } = req.body;
     const { userId } = req.user;
@@ -118,16 +118,47 @@ router.delete('/club', au, async (req, res, next) => {
     const { userId } = req.user;
 
     const findClub = await prisma.club.findFirst({
-        where : {userId}
-    })
+      where: { userId },
+    });
 
-    if(!findClub){
-        return res.status(401).json({message:`해당 클럽이 존재하지 않습니다`})
+    if (!findClub) {
+      return res.status(401).json({ message: `해당 클럽이 존재하지 않습니다` });
     }
     await prisma.club.delete({
       where: { userId },
     });
     return res.status(400).json({ message: '클럽삭제가 정상처리 되었습니다' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// 랭킹조회 API
+router.get('/rankings', async (req, res, next) => {
+  try {
+    const rankings = await prisma.club.findMany({
+      select: {
+        clubName: true,
+        MMR: true,
+        win: true,
+        lose: true,
+      },
+      orderBy: {
+        MMR: 'desc',
+      },
+    });
+
+    if (rankings.length === 0) {
+      return res.status(404).json({ message: '랭킹 정보를 찾을 수 없습니다.' });
+    }
+
+    // 순위 추가
+    const rankingsWithRank = rankings.map((club, index) => ({
+      rank: index + 1,
+      ...club,
+    }));
+
+    return res.status(200).json(rankingsWithRank);
   } catch (error) {
     next(error);
   }
