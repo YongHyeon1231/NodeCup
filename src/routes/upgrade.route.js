@@ -62,7 +62,7 @@ router.post('/one', async (req, res, next) => {
       where: {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
-        card_enhancement: upgradecard.card_enhancement,
+        cardEnhancement: upgradecard.cardEnhancement,
         state: upgradedata.INVENTORY,
         NOT: { cardId: cardId },
       },
@@ -75,7 +75,7 @@ router.post('/one', async (req, res, next) => {
 
     // 강화 성공 확률
     const percentage =
-      upgradedata.firstpercentage - upgradecard.card_enhancement * upgradedata.percentagedown;
+      upgradedata.firstpercentage - upgradecard.cardEnhancement * upgradedata.percentagedown;
 
     // 능력치 기준 모델
     const cardmodel = await prisma.cardModel.findFirst({
@@ -97,7 +97,7 @@ router.post('/one', async (req, res, next) => {
         upgradedcard = await tx.card.update({
           where: { cardId: upgradecard.cardId },
           data: {
-            card_enhancement: upgradecard.card_enhancement + 1,
+            cardEnhancement: upgradecard.cardEnhancement + 1,
             speed: upgradecard.speed + cardmodel.speed * upgradedata.statup,
             shootAccuracy: upgradecard.shootAccuracy + cardmodel.shootAccuracy * upgradedata.statup,
             shootPower: upgradecard.shootPower + cardmodel.shootPower * upgradedata.statup,
@@ -168,7 +168,7 @@ router.post('/every', async (req, res, next) => {
       where: {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
-        card_enhancement: upgradecard.card_enhancement,
+        cardEnhancement: upgradecard.cardEnhancement,
         state: upgradedata.INVENTORY,
       },
     });
@@ -180,7 +180,7 @@ router.post('/every', async (req, res, next) => {
 
     // 강화 성공 확률
     const percentage =
-      upgradedata.firstpercentage - upgradecard.card_enhancement * upgradedata.percentagedown;
+      upgradedata.firstpercentage - upgradecard.cardEnhancement * upgradedata.percentagedown;
 
     // 능력치 기준 모델
     const cardmodel = await prisma.cardModel.findFirst({
@@ -207,7 +207,7 @@ router.post('/every', async (req, res, next) => {
           const successcard = await tx.card.update({
             where: { cardId: materialcards[2 * i].cardId },
             data: {
-              card_enhancement: materialcards[2 * i].card_enhancement + 1,
+              cardEnhancement: materialcards[2 * i].cardEnhancement + 1,
               speed: materialcards[2 * i].speed + cardmodel.speed * upgradedata.statup,
               shootAccuracy:
                 materialcards[2 * i].shootAccuracy + cardmodel.shootAccuracy * upgradedata.statup,

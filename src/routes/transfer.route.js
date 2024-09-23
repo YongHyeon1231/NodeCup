@@ -85,7 +85,7 @@ router.post('/sell', async (req, res, next) => {
     const registeredcard = { ...transfercard, ...card };
 
     return res.status(201).json({
-      Message: `이적시장에 ${card.card_enhancement}강 ${card.cardName}카드가 등록되었습니다!`,
+      Message: `이적시장에 ${card.cardEnhancement}강 ${card.cardName}카드가 등록되었습니다!`,
       registeredcard,
     });
   } catch (error) {
@@ -174,7 +174,7 @@ router.patch('/purchase', async (req, res, next) => {
     });
 
     return res.status(201).json({
-      Messaeg: `이적시장에서 ${card.card_enhancement}강 ${card.cardName}카드를 구매하였습니다!`,
+      Messaeg: `이적시장에서 ${card.cardEnhancement}강 ${card.cardName}카드를 구매하였습니다!`,
       card,
     });
   } catch (error) {
@@ -205,7 +205,7 @@ router.get('/search', async (req, res, next) => {
       include: {
         card: {
           select: {
-            card_enhancement: true,
+            cardEnhancement: true,
             cardCode: true,
             cardName: true,
             speed: true,
@@ -273,7 +273,7 @@ router.delete('/sell', async (req, res, next) => {
     const registeredcard = { ...transfer, ...card };
 
     return res.status(200).json({
-      Message: `이적시장에서 ${card.card_enhancement}강 ${card.cardName}카드의 등록이 취소되었습니다.`,
+      Message: `이적시장에서 ${card.cardEnhancement}강 ${card.cardName}카드의 등록이 취소되었습니다.`,
       registeredcard,
     });
   } catch (error) {
