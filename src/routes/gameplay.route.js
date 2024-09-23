@@ -34,22 +34,6 @@ router.post('/gameplay', async (req, res, next) => {
 
     const userTotalStat = userFormation.teamTotalStat;
 
-    //## 최성원 삭제 (전체 랜덤 → 점수 가까운 순으로 바꾸기 위함)
-    // // 상대 유저 랜덤 선택
-    // const opponent = await prisma.users.findMany({ where: { NOT: { userId: req.user.userId } } });
-    // const randomOpponent = opponent[Math.floor(Math.random() * opponent.length)];
-
-    // // 상대 포메이션 조회
-    // const opponentFormations = await prisma.formations.findMany({
-    //   where: { userId: randomOpponent.userId },
-    // });
-
-    // if (opponentFormations.length === 0) {
-    //   return res.status(404).json({ message: '상대 포메이션을 찾을 수 없습니다.' });
-    // }
-    //## 최성원 삭제 (전체 랜덤 → 점수 가까운 순으로 바꾸기 위함)
-
-    //## 최성원 추가 (전체 랜덤 → 점수 가까운 순으로 바꾸기 위함)
     // 우리 클럽
     const myclub = await prisma.club.findFirst({
       where: { userId: req.user.userId },
@@ -75,13 +59,6 @@ router.post('/gameplay', async (req, res, next) => {
         break;
       }
     }
-    //## 최성원 추가 (전체 랜덤 → 점수 가까운 순으로 바꾸기 위함)
-
-    //## 최성원 삭제 (전체 랜덤 → 점수 가까운 순으로 바꾸기 위함)
-    // // 랜덤하게 상대 포메이션 선택
-    // const opponentFormation =
-    //   opponentFormations[Math.floor(Math.random() * opponentFormations.length)];
-    //## 최성원 삭제 (전체 랜덤 → 점수 가까운 순으로 바꾸기 위함)
 
     //## 최성원 추가 (유효성 검사)
     if (!opponentFormation) {
@@ -120,11 +97,6 @@ router.post('/gameplay', async (req, res, next) => {
         opponentScore++; // 상대방 점수 증가
       }
 
-      //## 최성원 삭제 (불가능한 상황: 4:3이 최대)
-      // // 최종 점수는 여전히 5점을 넘지 않도록 제한
-      // userScore = Math.min(userScore, 5);
-      // opponentScore = Math.min(opponentScore, 5);
-      //## 최성원 삭제 (불가능한 상황: 4:3이 최대)
       // 최종 점수는 여전히 5점을 넘지 않도록 제한
       userScore = Math.min(userScore, 5);
       opponentScore = Math.min(opponentScore, 5);

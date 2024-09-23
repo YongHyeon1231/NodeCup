@@ -1,9 +1,7 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
 import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
-
 const router = express.Router();
-
 // 카드 생성 API
 
 router.use(userAuthMiddleware);
@@ -27,8 +25,8 @@ router.post('/cardModel', async (req, res, next) => {
         where: {
           cardName: card.cardName,
           speed: card.speed,
-          shoot_accuracy: card.shoot_accuracy,
-          shoot_power: card.shoot_power,
+          shootAccuracy: card.shootAccuracy,
+          shootPower: card.shootPower,
           defense: card.defense,
           stamina: card.stamina,
         },
@@ -69,7 +67,7 @@ router.post('/cardModel', async (req, res, next) => {
 
 // 카드 수정 API
 
-router.put('/cardModel/:cardCode', au, async (req, res, next) => {
+router.put('/cardModel/:cardCode', async (req, res, next) => {
   try {
     //  현재 사용자가 운영자인지 확인
     if (!req.user.isGM) {
@@ -77,7 +75,7 @@ router.put('/cardModel/:cardCode', au, async (req, res, next) => {
     }
 
     const { cardCode } = req.params;
-    const { cardName, speed, shoot_accuracy, shoot_power, defense, stamina, type } = req.body;
+    const { cardName, speed, shootAccuracy, shootPower, defense, stamina, type } = req.body;
 
     console.log('Searching for card with cardCode:', +cardCode);
 
@@ -99,8 +97,8 @@ router.put('/cardModel/:cardCode', au, async (req, res, next) => {
       data: {
         cardName,
         speed,
-        shoot_accuracy,
-        shoot_power,
+        shootAccuracy,
+        shootPower,
         defense,
         stamina,
         type,
@@ -112,5 +110,4 @@ router.put('/cardModel/:cardCode', au, async (req, res, next) => {
     next(error);
   }
 });
-
 export default router;
