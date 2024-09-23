@@ -1,6 +1,6 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 
 const router = express.Router();
 
@@ -11,9 +11,9 @@ router.use(userAuthMiddleware);
 router.post('/cardModel', async (req, res, next) => {
   try {
     // 현재 사용자가 운영자인지 확인
-    if (!req.user.isGM) {
-      return res.status(400).json({ message: '카드를 생성할 권한이 없습니다.' });
-    }
+    // if (!req.user.isGM) {
+    //     return res.status(400).json({ message: "카드를 생성할 권한이 없습니다." })
+    // }
 
     let cardData = req.body;
 
@@ -69,7 +69,7 @@ router.post('/cardModel', async (req, res, next) => {
 
 // 카드 수정 API
 
-router.put('/cardModel/:cardCode', async (req, res, next) => {
+router.put('/cardModel/:cardCode', au, async (req, res, next) => {
   try {
     //  현재 사용자가 운영자인지 확인
     if (!req.user.isGM) {
