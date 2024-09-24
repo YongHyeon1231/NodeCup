@@ -1,27 +1,58 @@
-import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import express from 'express';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 import fv from '../middlewares/validators/formationsValidator.middleware.js';
+import cardRepository from '../repositories/cardRepository.js';
+import formationRepository from '../repositories/formationRepository.js';
 
+const MANAGER = 'manager';
+const TRANSFER = 'transfer';
+const FORMATION = 'formation';
+const INVENTORY = 'inventory';
+const LINEUP = { A: 'A', B: 'B' };
+
+// 팀 스텟 값 계산 함수
+const addTotalStat = (origin, card) => {
+  origin =
+    origin +
+    (card.speed * 0.1 +
+      card.shootAccuracy * 0.25 +
+      card.shootPower * 0.15 +
+      card.defense * 0.3 +
+      card.stamina * 0.2);
+  return Math.floor(origin);
+};
+
+const subTotalStat = (origin, card) => {
+  origin =
+    origin -
+    (card.speed * 0.1 +
+      card.shootAccuracy * 0.25 +
+      card.shootPower * 0.15 +
+      card.defense * 0.3 +
+      card.stamina * 0.2);
+  return Math.floor(origin);
+};
+
+const pathRouter = express.Router();
 const router = express.Router();
+pathRouter.use('/formations', userAuthMiddleware, router);
 
-// 포메이션 팀 카드 넣기 validator만들기 생각
-router.post('/formations/equip', au, fv.equipCodeBodyValidation, async (req, res, next) => {
+router.post('/equip', fv.equipCodeBodyValidation, async (req, res, next) => {
   try {
     const { cardNumber, lineUp, position } = req.body;
     const userId = req.user.userId;
-
-    // 클럽 정보 조회 <- 나중에 auths로 바꿔보자
-    const userClub = await prisma.club.findFirst({ where: { userId: userId } });
+    const userClub = await cardRepository.findUserClub(userId);
 
     if (!userClub) {
       return res.status(404).json({ message: '클럽이 존재하지 않습니다.' });
     }
 
-    // 포메이션 슬롯에 넣을 카드 찾기
-    const inputCard = await prisma.cards.findFirst({
-      where: { cardNumber: cardNumber, userId: userId, clubId: userClub.clubId },
-    });
+    const inputCard = await cardRepository.findCardByCardNumber(
+      cardNumber,
+      userId,
+      userClub.clubId,
+    );
 
     if (!inputCard) {
       return res
@@ -29,100 +60,96 @@ router.post('/formations/equip', au, fv.equipCodeBodyValidation, async (req, res
         .json({ message: `해당 슬롯:${cardNumber}에 해당하는 카드가 슬롯에 없습니다.` });
     }
 
-    // 이적 시장에 있는 카드가 아니라면
-    if (inputCard.state === 'transfer') {
+    if (position !== MANAGER && inputCard === MANAGER) {
+      return res.status(401).json({
+        message: '플레이어 포지션은 플레이어 카드만 넣을 수 있습니다.',
+        data: `넣으려고 한 카드 : ${inputCard}`,
+      });
+    }
+
+    if (position === MANAGER && inputCard.type !== MANAGER) {
+      return res.status(401).json({
+        message: '감독 포지션은 감독 카드만 넣을 수 있습니다.',
+        data: `넣으려고 한 카드 : ${inputCard}`,
+      });
+    }
+
+    if (inputCard.state === TRANSFER) {
       return res.status(401).json({ message: '해당 카드는 이적 시장에 올라와져 있습니다.' });
     }
 
-    // 지금 문제 : 카드 슬롯의 state가 formation이어도 position만 다르면 장착이 댐
-    if (inputCard.state === 'formation') {
+    if (inputCard.state === FORMATION) {
       return res.status(401).json({ message: '해당 카드는 다른 Position에 장착되어 있습니다.' });
     }
 
-    // 현재 상태 : cards가 인벤토리에 있거나 이미 장착된 카드
+    const prevFormationCard = await formationRepository.findFormation(
+      userId,
+      userClub.clubId,
+      lineUp,
+      position,
+    );
 
-    // 장착되어 있는 카드 포메이션 찾기
-    const preformationCard = await prisma.formations.findFirst({
-      where: {
-        lineUp: lineUp,
-        position: position,
-        userId: userId,
-        clubId: userClub.clubId,
-      },
-    });
+    let updatedTeamTotalStat = prevFormationCard
+      ? addTotalStat(prevFormationCard.teamTotalStat, inputCard)
+      : addTotalStat(0, inputCard);
 
-    let updatedTeamTotalStat = 0;
-    if (preformationCard) {
-      updatedTeamTotalStat = AddCal(preformationCard.teamTotalStat, inputCard);
-    } else if (!preformationCard) {
-      updatedTeamTotalStat = AddCal(updatedTeamTotalStat, inputCard);
-    }
+    console.log('테스트입니다.', updatedTeamTotalStat, prevFormationCard);
 
-    let msg;
+    if (prevFormationCard) {
+      const alreadyEquipCard = await cardRepository.findCardByCardNumber(
+        prevFormationCard.cardNumber,
+        userId,
+        userClub.clubId,
+      );
+      if (!alreadyEquipCard) {
+        return res.status(401).json({ message: '장착되어 있는 카드 슬롯을 찾지 못했습니다.' });
+      }
 
-    await prisma.$transaction(async (tx) => {
-      if (preformationCard) {
-        // 장착되어 있는 카드 슬롯 찾기
-        const alreadyEquipCard = await tx.cards.findFirst({
+      await prisma.$transaction(async (tx) => {
+        const unequipCard = await tx.card.update({
           where: {
-            userId: userId,
-            clubId: userClub.clubId,
-            cardNumber: preformationCard.cardNumber,
-          },
-        });
-
-        if (!alreadyEquipCard) {
-          return res.status(401).json({ message: '장착되어 있는 카드 슬롯을 찾지 못했습니다.' });
-        }
-        console.log('test => ', preformationCard.cardNumber, alreadyEquipCard.cardId);
-        // 장착 카드 state update
-        const unequipCard = await tx.cards.update({
-          where: {
-            cardNumber: preformationCard.cardNumber,
             cardId: alreadyEquipCard.cardId,
             userId: userId,
             clubId: userClub.clubId,
+            cardNumber: prevFormationCard.cardNumber,
           },
           data: {
-            state: 'inventory',
+            state: INVENTORY,
           },
         });
 
-        updatedTeamTotalStat = SubCal(updatedTeamTotalStat, unequipCard);
+        updatedTeamTotalStat = subTotalStat(updatedTeamTotalStat, unequipCard);
 
-        // 장착 할 카드 state update
-        await tx.cards.update({
+        await tx.card.update({
           where: {
+            cardId: inputCard.cardId,
             userId: userId,
             clubId: userClub.clubId,
             cardNumber: inputCard.cardNumber,
-            cardId: inputCard.cardId,
           },
           data: {
-            state: 'formation',
+            state: FORMATION,
           },
         });
 
-        // 포메이션 슬롯 update
-        const updateFormationCard = await tx.formations.update({
+        await tx.formations.update({
           where: {
-            formationId: preformationCard.formationId,
+            formationId: prevFormationCard.formationId,
             userId: userId,
             clubId: userClub.clubId,
             lineUp: lineUp,
             position: position,
           },
           data: {
-            card_enhancement: inputCard.card_enhancement,
+            cardEnhancement: inputCard.cardEnhancement,
             cardName: inputCard.cardName,
             cardNumber: inputCard.cardNumber,
-            teamTotalStat: updatedTeamTotalStat,
+            teamTotalStat: +updatedTeamTotalStat,
             lineUp: lineUp,
             position: position,
           },
         });
 
-        // 포메이션 슬롯에 장착되어 있는 teamtotalStat 전체 바꾸기
         await tx.formations.updateMany({
           where: {
             userId: userId,
@@ -130,84 +157,89 @@ router.post('/formations/equip', au, fv.equipCodeBodyValidation, async (req, res
             lineUp: lineUp,
           },
           data: {
-            teamTotalStat: updatedTeamTotalStat,
+            teamTotalStat: +updatedTeamTotalStat,
           },
         });
-        msg = { message: '포메이션 카드가 바뀌었습니다.', data: updateFormationCard };
-      } else {
-        // 같은 linUp에 장착되어 있는 포메이션 카드 찾기
-        const teamFormationCard = await tx.formations.findFirst({
-          where: {
-            lineUp: lineUp,
-            userId: userId,
-            clubId: userClub.clubId,
-          },
-        });
+      });
+      return res.status(200).json({ message: '포메이션 카드가 바뀌었습니다.' });
+    } else {
+      const teamFormationCard = await formationRepository.findAnyFormation(
+        userId,
+        userClub.clubId,
+        lineUp,
+      );
 
-        if (teamFormationCard) {
-          updatedTeamTotalStat += teamFormationCard.teamTotalStat;
-        }
-
-        // 포메이션 슬롯이 비어있기 때문에 생성해주기
-        const createFormationCard = await tx.formations.create({
-          data: {
-            userId: userId,
-            clubId: userClub.clubId,
-            card_enhancement: inputCard.card_enhancement,
-            cardName: inputCard.cardName,
-            cardNumber: inputCard.cardNumber,
-            teamTotalStat: updatedTeamTotalStat, //이전 카드 Teamtotal Stat 에다가 +(inputCard.speed* 0.1) + (inputCard.shoot_accuracy*0.25) + (inputCard.shoot_power*0.15)+ (inputCard.defense*0.3) + (inputCard.stamina*0.2) 더하기
-            lineUp: lineUp,
-            position: position,
-          },
-        });
-
-        await tx.cards.update({
-          // 해당 슬롯 equipState true로 바꿔주기
-          where: {
-            cardNumber: cardNumber,
-            userId: userId,
-            cardId: inputCard.cardId,
-            clubId: userClub.clubId,
-          },
-          data: {
-            state: 'formation',
-          },
-        });
-
-        // teamtotalStat 전체 바꾸기
-        await tx.formations.updateMany({
-          where: {
-            userId: userId,
-            clubId: userClub.clubId,
-            lineUp: lineUp,
-          },
-          data: {
-            teamTotalStat: updatedTeamTotalStat,
-          },
-        });
-        msg = { message: '포메이션이 추가되었습니다.', data: createFormationCard };
+      if (teamFormationCard) {
+        updatedTeamTotalStat += teamFormationCard.teamTotalStat;
       }
-    });
 
-    return res.status(200).json(msg);
+      await prisma.$transaction(async (tx) => {
+        await tx.formations.create({
+          data: {
+            userId: userId,
+            // clubId: userClub.clubId,
+            cardEnhancement: inputCard.cardEnhancement,
+            cardName: inputCard.cardName,
+            cardNumber: inputCard.cardNumber,
+            teamTotalStat: +updatedTeamTotalStat,
+            lineUp: lineUp,
+            position: position,
+            club: {
+              connect: {
+                clubId: userClub.clubId,
+              },
+            },
+          },
+        });
+
+        await tx.card.update({
+          where: {
+            userId: userId,
+            cardId: inputCard.cardId,
+            clubId: userClub.clubId,
+            cardNumber: cardNumber,
+          },
+          data: {
+            state: FORMATION,
+          },
+        });
+
+        await tx.formations.updateMany({
+          where: {
+            userId: userId,
+            clubId: userClub.clubId,
+            lineUp: lineUp,
+          },
+          data: {
+            teamTotalStat: +updatedTeamTotalStat,
+          },
+        });
+      });
+      return res
+        .status(200)
+        .json({ message: '포메이션이 추가되었습니다.'});
+    }
+    return res
+      .status(400)
+      .json({ mesage: '포메이션 카드 장착이 정상적으로 이루어지지 않았습니다.' });
   } catch (error) {
     next(error);
   }
 });
 
-// 포메이션 카드 unequip
-router.post('/formations/unequip', au, fv.unequipCodeBodyValidation, async (req, res, next) => {
+router.post('/unequip', fv.unequipCodeBodyValidation, async (req, res, next) => {
   try {
     const userId = req.user.userId;
     const { cardNumber, lineUp, position } = req.body;
-    const userClub = await prisma.club.findFirst({ where: { userId: req.user.userId } });
+    const userClub = await cardRepository.findUserClub(userId);
+
+    const inputCard = await cardRepository.findCardByCardNumber(
+      cardNumber,
+      userId,
+      userClub.clubId,
+    );
 
     // 카드 슬롯에 카드가 있는지 확인
-    const inputCard = await prisma.cards.findFirst({
-      where: { cardNumber: cardNumber, userId: userId, clubId: userClub.clubId },
-    });
-
     if (!inputCard) {
       return res
         .status(404)
@@ -216,43 +248,41 @@ router.post('/formations/unequip', au, fv.unequipCodeBodyValidation, async (req,
 
     // 장착 되어 있지 않은 카드라면
     console.log('inpuCard.state => ', inputCard.state);
-    if (inputCard.state !== 'formation') {
+    if (inputCard.state !== FORMATION) {
       return res.status(401).json({ message: 'inputCard => 장착된 카드가 아닙니다.' });
     }
 
     // 해당 포메이션 슬롯에 해당 lineUp과 Position에 카드가 있는지 체크
-    const preformationCard = await prisma.formations.findFirst({
-      where: {
-        lineUp: lineUp,
-        position: position,
-        userId: userId,
-        clubId: userClub.clubId,
-      },
-    });
+    const prevformationCard = await formationRepository.findFormation(
+      userId,
+      userClub.clubId,
+      lineUp,
+      position,
+    );
 
-    if (!preformationCard) {
+    if (!prevformationCard) {
       return res
         .status(401)
-        .json({ message: 'preformationCard => 해당 카드는 장착이 되어있지 않습니다.' });
+        .json({ message: 'prevformationCard => 해당 카드는 장착이 되어있지 않습니다.' });
     }
 
     await prisma.$transaction(async (tx) => {
       // 장착 해제
-      const unequipCard = await tx.cards.update({
+      const unequipCard = await tx.card.update({
         where: {
           slotNumber: inputCard.slotNumber,
           cardId: inputCard.cardId,
           userId: userId,
         },
         data: {
-          state: 'inventory',
+          state: INVENTORY,
         },
       });
 
       // 해당 슬롯 데이터 비워두기
       await tx.formations.delete({
         where: {
-          formationId: preformationCard.formationId,
+          formationId: prevformationCard.formationId,
           lineUp: lineUp,
           position: position,
           userId: userId,
@@ -260,7 +290,7 @@ router.post('/formations/unequip', au, fv.unequipCodeBodyValidation, async (req,
         },
       });
 
-      const updatedTeamTotalStat = SubCal(preformationCard.teamTotalStat, unequipCard);
+      const updatedTeamTotalStat = subTotalStat(prevformationCard.teamTotalStat, unequipCard);
 
       // teamtotalStat 전체 바꾸기
       await tx.formations.updateMany({
@@ -285,59 +315,29 @@ router.post('/formations/unequip', au, fv.unequipCodeBodyValidation, async (req,
   }
 });
 
-const AddCal = (origin, card) => {
-  origin =
-    origin +
-    card.speed * 0.1 +
-    card.shoot_accuracy * 0.25 +
-    card.shoot_power * 0.15 +
-    card.defense * 0.3 +
-    card.stamina * 0.2;
-  return origin;
-};
-
-const SubCal = (origin, card) => {
-  origin =
-    origin -
-    (card.speed * 0.1 +
-      card.shoot_accuracy * 0.25 +
-      card.shoot_power * 0.15 +
-      card.defense * 0.3 +
-      card.stamina * 0.2);
-  return origin;
-};
-
-// 포메이션 조회 가능
-// 질문 -> formations가 여러개인데 lineUp이 2개인데 lineUp으로 구분지어서 조회
-router.get('/formations', au, async (req, res, next) => {
+router.get('/check', async (req, res, next) => {
   try {
-    const formationA = await prisma.formations.findMany({
-      where: { userId: req.user.userId, lineUp: 'A' },
-      select: {
-        cardName: true,
-        card_enhancement: true,
-        cardNumber: true,
-        position: true,
-        teamTotalStat: true,
-      },
-    });
+    const formations = await formationRepository.findManyFormation(req.user.userId);
 
-    const formationB = await prisma.formations.findMany({
-      where: { userId: req.user.userId, lineUp: 'B' },
-      select: {
-        cardName: true,
-        card_enhancement: true,
-        cardNumber: true,
-        position: true,
-        teamTotalStat: true,
-      },
-    });
+    if (!formations) {
+      return res.status(401).json({ message: '포메이션에 대한 정보가 없습니다.' });
+    }
 
-    const msg = { LineUp_A: formationA, LineUp_B: formationB };
+    const formationsA = [];
+    const formationsB = [];
+    for (const value of formations) {
+      if (value.lineUp === LINEUP.A) {
+        formationsA.push(value);
+      } else if (value.lineUp === LINEUP.B) {
+        formationsB.push(value);
+      }
+    }
+
+    const msg = { LineUp_A: formationsA, LineUp_B: formationsB };
     return res.status(200).json(msg);
   } catch (error) {
     next(error);
   }
 });
 
-export default router;
+export default pathRouter;
