@@ -217,7 +217,7 @@ router.post('/equip', fv.equipCodeBodyValidation, async (req, res, next) => {
       });
       return res
         .status(200)
-        .json({ message: '포메이션이 추가되었습니다.', data: createFormationCard });
+        .json({ message: '포메이션이 추가되었습니다.'});
     }
     return res
       .status(400)
@@ -227,6 +227,117 @@ router.post('/equip', fv.equipCodeBodyValidation, async (req, res, next) => {
   }
 });
 
-router.post('/unequip', fv.unequipCodeBodyValidation, async (req, res, next) => {});
+router.post('/unequip', fv.unequipCodeBodyValidation, async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const { cardNumber, lineUp, position } = req.body;
+    const userClub = await cardRepository.findUserClub(userId);
+
+    const inputCard = await cardRepository.findCardByCardNumber(
+      cardNumber,
+      userId,
+      userClub.clubId,
+    );
+
+    // 카드 슬롯에 카드가 있는지 확인
+    if (!inputCard) {
+      return res
+        .status(404)
+        .json({ message: `해당 슬롯:${cardNumber}에 해당하는 카드가 슬롯에 없습니다.` });
+    }
+
+    // 장착 되어 있지 않은 카드라면
+    console.log('inpuCard.state => ', inputCard.state);
+    if (inputCard.state !== FORMATION) {
+      return res.status(401).json({ message: 'inputCard => 장착된 카드가 아닙니다.' });
+    }
+
+    // 해당 포메이션 슬롯에 해당 lineUp과 Position에 카드가 있는지 체크
+    const prevformationCard = await formationRepository.findFormation(
+      userId,
+      userClub.clubId,
+      lineUp,
+      position,
+    );
+
+    if (!prevformationCard) {
+      return res
+        .status(401)
+        .json({ message: 'prevformationCard => 해당 카드는 장착이 되어있지 않습니다.' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 장착 해제
+      const unequipCard = await tx.card.update({
+        where: {
+          slotNumber: inputCard.slotNumber,
+          cardId: inputCard.cardId,
+          userId: userId,
+        },
+        data: {
+          state: INVENTORY,
+        },
+      });
+
+      // 해당 슬롯 데이터 비워두기
+      await tx.formations.delete({
+        where: {
+          formationId: prevformationCard.formationId,
+          lineUp: lineUp,
+          position: position,
+          userId: userId,
+          clubId: userClub.clubId,
+        },
+      });
+
+      const updatedTeamTotalStat = subTotalStat(prevformationCard.teamTotalStat, unequipCard);
+
+      // teamtotalStat 전체 바꾸기
+      await tx.formations.updateMany({
+        where: {
+          userId: userId,
+          clubId: userClub.clubId,
+          lineUp: lineUp,
+        },
+        data: {
+          teamTotalStat: updatedTeamTotalStat,
+        },
+      });
+
+      return res.status(201).json({
+        changedTeamTotalStat: updatedTeamTotalStat,
+        message: '해당 카드가 장착 해제 되었습니다.',
+        data: unequipCard,
+      });
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/check', async (req, res, next) => {
+  try {
+    const formations = await formationRepository.findManyFormation(req.user.userId);
+
+    if (!formations) {
+      return res.status(401).json({ message: '포메이션에 대한 정보가 없습니다.' });
+    }
+
+    const formationsA = [];
+    const formationsB = [];
+    for (const value of formations) {
+      if (value.lineUp === LINEUP.A) {
+        formationsA.push(value);
+      } else if (value.lineUp === LINEUP.B) {
+        formationsB.push(value);
+      }
+    }
+
+    const msg = { LineUp_A: formationsA, LineUp_B: formationsB };
+    return res.status(200).json(msg);
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default pathRouter;

@@ -15,7 +15,7 @@ const unequipSchema = Joi.object({
 const formationsValidationJoi = {
   equipCodeBodyValidation: async (req, res, next) => {
     try {
-      const validation = await equipSchema.validateAsync(req.body);
+      await equipSchema.validateAsync(req.body);
       next();
     } catch (error) {
       next(error);
@@ -23,7 +23,7 @@ const formationsValidationJoi = {
   },
   unequipCodeBodyValidation: async (req, res, next) => {
     try {
-      const validation = await unequipSchema.validateAsync(req.body);
+      await unequipSchema.validateAsync(req.body);
 
       next();
     } catch (error) {
