@@ -34,19 +34,21 @@ router.post('/gacha', async (req, res, next) => {
   try {
     const { type, count } = req.body;
 
+    // club 존재 여부 검사
     const club = await prisma.club.findFirst({
       where: { userId: req.user.userId },
     });
 
-    // 유효성 검사
     if (!club) {
       return res.status(404).json({ Message: '클럽을 먼저 생성해 주세요.' });
     }
 
+    // type 유효성 검사
     if (type !== shop.MANAGER && type !== shop.PLAYER) {
       return res.status(400).json({ message: '올바른 카드타입(player, manager)을 입력하세요.' });
     }
 
+    // count 유효성 검사
     if (isNaN(count) || count <= 0) {
       return res.status(400).json({ message: '개수(count)는 1 이상의 숫자를 입력하세요.' });
     }
@@ -72,7 +74,7 @@ router.post('/gacha', async (req, res, next) => {
         .json({ message: `캐시가 ${shop.cashPrice * count - club.cash}원만큼 부족합니다.` });
     }
 
-    // 카드 번호 설정
+    // 생성될 카드의 카드Number 추적
     const existingCards = await prisma.card.findMany({
       where: { userId: club.userId },
       orderBy: { cardNumber: 'desc' },
@@ -109,7 +111,7 @@ router.post('/gacha', async (req, res, next) => {
       await tx.club.update({
         where: { clubId: club.clubId },
         data: {
-          [type === shop.MANAGER ? 'gold' : 'cash']: {
+          [type === shop.PLAYER ? 'gold' : 'cash']: {
             decrement: type === shop.PLAYER ? shop.goldPrice * count : shop.cashPrice * count,
           },
         },
@@ -126,15 +128,16 @@ router.patch('/recharge', async (req, res, next) => {
   try {
     const { cash } = req.body;
 
+    // club 존재 여부 검사
     const club = await prisma.club.findFirst({
       where: { userId: req.user.userId },
     });
 
-    // 유효성 검사
     if (!club) {
       return res.status(404).json({ Message: '클럽을 먼저 생성해 주세요.' });
     }
 
+    // cash 유효성 검사
     if (isNaN(cash)) {
       return res.status(400).json({ message: '캐시는 숫자를 입력해주세요.' });
     }

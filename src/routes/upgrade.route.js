@@ -31,6 +31,14 @@ router.post('/one', async (req, res, next) => {
   try {
     const { cardId } = req.body;
 
+    // club 존재 여부 검사
+    const club = await prisma.club.findFirst({
+      where: { userId: req.user.userId },
+    });
+    if (!club) {
+      return res.status(404).json({ Message: '클럽을 먼저 생성해 주세요.' });
+    }
+
     // 카드아이디 유효성 검사
     if (isNaN(cardId)) {
       return res
@@ -85,7 +93,7 @@ router.post('/one', async (req, res, next) => {
     let result = '';
     let upgradedcard;
 
-    // 강화 시도
+    // 강화 실행
     await prisma.$transaction(async (tx) => {
       // 재료카드 소진
       await tx.card.delete({
@@ -107,12 +115,14 @@ router.post('/one', async (req, res, next) => {
         });
 
         result += '강화에 성공하여 재료카드가 소진되었습니다';
+
+        // 강화 실패 시
       } else {
         result += '강화에 실패하여 재료카드만 소진되었습니다';
       }
     });
 
-    // cardNumber 정리: 병렬로 처리
+    // cardNumber 정리
     const cardsort = await prisma.card.findMany({
       where: { userId: req.user.userId },
     });
@@ -135,6 +145,14 @@ router.post('/one', async (req, res, next) => {
 router.post('/every', async (req, res, next) => {
   try {
     const { cardId } = req.body;
+
+    // club 존재 여부 검사
+    const club = await prisma.club.findFirst({
+      where: { userId: req.user.userId },
+    });
+    if (!club) {
+      return res.status(404).json({ Message: '클럽을 먼저 생성해 주세요.' });
+    }
 
     // 카드아이디 형식 검사
     if (isNaN(cardId)) {
@@ -223,7 +241,7 @@ router.post('/every', async (req, res, next) => {
       }
     });
 
-    // cardNumber 정리: 병렬로 처리
+    // cardNumber 정리
     const cardsort = await prisma.card.findMany({
       where: { userId: req.user.userId },
     });

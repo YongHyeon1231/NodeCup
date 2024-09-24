@@ -28,7 +28,7 @@ router.post('/sell', async (req, res, next) => {
   try {
     const { cardId, price } = req.body;
 
-    // club 존재 여부
+    // club 존재 여부 검사
     const club = await prisma.club.findFirst({
       where: { userId: req.user.userId },
     });
@@ -61,7 +61,7 @@ router.post('/sell', async (req, res, next) => {
       return res.status(403).json({ Message: '다른 유저의 카드를 등록할 수 없습니다.' });
     }
 
-    // inventory에 있는게 맞는지
+    // inventory에 있는지 검사
     if (card.state !== transferdata.INVENTORY) {
       return res.status(400).json({ Message: '등록하고 싶은 카드는 인벤토리에 있어야합니다.' });
     }
@@ -98,7 +98,7 @@ router.patch('/purchase', async (req, res, next) => {
   try {
     const { transferId } = req.body;
 
-    // club 존재 여부
+    // club 존재 여부 검사
     const club = await prisma.club.findFirst({
       where: { userId: req.user.userId },
     });
@@ -134,7 +134,7 @@ router.patch('/purchase', async (req, res, next) => {
       where: { userId: card.userId },
     });
 
-    // 다음 카드 번호
+    // 얻게될 카드의 카드Number 추적
     const existingCards = await prisma.card.findMany({
       where: { userId: club.userId },
       orderBy: { cardNumber: 'desc' },
@@ -142,8 +142,9 @@ router.patch('/purchase', async (req, res, next) => {
     });
     const nextCardNumber = existingCards.length > 0 ? existingCards[0].cardNumber + 1 : 1;
 
-    // 카드 구매
+    // 카드 구매 실행
     await prisma.$transaction(async (tx) => {
+      // 구매자 골드 차감
       await tx.club.update({
         where: { clubId: club.clubId },
         data: {
@@ -151,6 +152,7 @@ router.patch('/purchase', async (req, res, next) => {
         },
       });
 
+      // 판매자 골드 가산
       await tx.club.update({
         where: { clubId: sellclub.clubId },
         data: {
@@ -158,6 +160,7 @@ router.patch('/purchase', async (req, res, next) => {
         },
       });
 
+      // 카드 주인 변경
       await tx.card.update({
         where: { cardId: transfer.cardId },
         data: {
@@ -168,6 +171,7 @@ router.patch('/purchase', async (req, res, next) => {
         },
       });
 
+      // 이적시장에서 삭제
       await tx.transfer.delete({
         where: { transferId: transfer.transferId },
       });
@@ -195,6 +199,7 @@ router.get('/search', async (req, res, next) => {
       return res.status(404).json({ Message: '클럽이 있어야 이적시장을 둘러볼 수 있습니다.' });
     }
 
+    // 이적시장 조회
     const transferCard = await prisma.transfer.findMany({
       where: {
         price: {
@@ -203,7 +208,7 @@ router.get('/search', async (req, res, next) => {
         },
       },
       include: {
-        card: {
+        cards: {
           select: {
             cardEnhancement: true,
             cardCode: true,
@@ -229,7 +234,7 @@ router.delete('/sell', async (req, res, next) => {
   try {
     const { transferId } = req.body;
 
-    // club 존재 여부
+    // club 존재 여부 검사
     const club = await prisma.club.findFirst({
       where: { userId: req.user.userId },
     });
