@@ -11,7 +11,7 @@ const router = express.Router();
 router.post('/users/sign-up', uv.signUpValidation, async (req, res, next) => {
   try {
     const { userName, email, password, isGM } = req.body;
-    console.log("여기야 여기 => ", isGM);
+    console.log('여기야 여기 => ', isGM);
     const isExistUser = await prisma.users.findFirst({
       where: {
         email,
