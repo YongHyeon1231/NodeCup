@@ -36,6 +36,17 @@ class FormationRepository {
     });
   }
 
+  async findManyFormationNotPosition(userId, clubId, lineUp, position) {
+    return await prisma.formations.findMany({
+      where: {
+        userId: userId,
+        clubId: clubId,
+        lineUp: lineUp,
+        position: { not: position },
+      },
+    });
+  }
+
   async createFormation(data) {
     return await prisma.formations.create(data);
   }

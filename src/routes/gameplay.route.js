@@ -79,10 +79,10 @@ router.post('/gameplay', async (req, res, next) => {
     // 스탯 차이로 인한 점수 증가
     if (statDifference > 0) {
       // 스탯 차이가 10 이상 일 때 내 점수 추가
-      userScore += Math.floor(statDifference / 10);
+      userScore += Math.floor(statDifference / 30);
     } else {
       // 상대방의 스탯이 높을 경우 상대 점수 증가
-      opponentScore += Math.floor(-statDifference / 10);
+      opponentScore += Math.floor(-statDifference / 30);
     }
 
     // 최종 점수는 최소 1점에서 최대 5점으로 제한

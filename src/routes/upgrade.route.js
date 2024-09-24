@@ -5,10 +5,10 @@ import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 const router = express.Router();
 
 router.use(userAuthMiddleware);
-router.use('/upgrading', router);
+router.use('/upgrade', router);
 
 // 중요 데이터 및 자주쓰는 표현
-class upgradeData {
+class UpgradeData {
   constructor() {
     // 강화 1단계 상승시 능력치 상승량 (10%)
     this.statup = 0.1;
@@ -24,7 +24,7 @@ class upgradeData {
     this.TRANSFER = 'transfer';
   }
 }
-const upgradedata = new upgradeData();
+const upgradeData = new UpgradeData();
 
 // 선수 카드 강화
 router.post('/one', async (req, res, next) => {

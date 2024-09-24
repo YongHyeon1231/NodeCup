@@ -7,11 +7,12 @@ const router = express.Router();
 // 가지고 있는 카드 전체 목록 조회 API
 router.get('/cards', au, async (req, res, next) => {
   try {
-    const cards = await prisma.cards.findMany({
+    const cards = await prisma.card.findMany({
       where: {
         userId: req.user.userId,
       },
       select: {
+        cardId: true,
         state: true,
         cardName: true,
         state: true,
@@ -23,6 +24,9 @@ router.get('/cards', au, async (req, res, next) => {
         defense: true,
         stamina: true,
         type: true,
+      },
+      orderBy: {
+        type: 'desc',
       },
     });
 
