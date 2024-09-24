@@ -143,5 +143,5 @@ model Champion {
   winRate Float
   MMR Int
 
-  @@map("hampion")
+  @@map("champion")
 }

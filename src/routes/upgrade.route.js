@@ -54,7 +54,7 @@ router.post('/one', async (req, res, next) => {
     }
 
     // 카드 인벤토리 여부 검사
-    if (upgradecard.state !== upgradedata.INVENTORY) {
+    if (upgradecard.state !== upgradeData.INVENTORY) {
       return res.status(400).json({
         Message: '인벤토리에 있는 카드만 강화가 가능합니다. 장착을 해제하고 시도해주세요',
       });
@@ -71,7 +71,7 @@ router.post('/one', async (req, res, next) => {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
         cardEnhancement: upgradecard.cardEnhancement,
-        state: upgradedata.INVENTORY,
+        state: upgradeData.INVENTORY,
         NOT: { cardId: cardId },
       },
     });
@@ -83,7 +83,7 @@ router.post('/one', async (req, res, next) => {
 
     // 강화 성공 확률
     const percentage =
-      upgradedata.firstpercentage - upgradecard.cardEnhancement * upgradedata.percentagedown;
+      upgradeData.firstpercentage - upgradecard.cardEnhancement * upgradeData.percentagedown;
 
     // 능력치 기준 모델
     const cardmodel = await prisma.cardModel.findFirst({
@@ -106,11 +106,11 @@ router.post('/one', async (req, res, next) => {
           where: { cardId: upgradecard.cardId },
           data: {
             cardEnhancement: upgradecard.cardEnhancement + 1,
-            speed: upgradecard.speed + cardmodel.speed * upgradedata.statup,
-            shootAccuracy: upgradecard.shootAccuracy + cardmodel.shootAccuracy * upgradedata.statup,
-            shootPower: upgradecard.shootPower + cardmodel.shootPower * upgradedata.statup,
-            defense: upgradecard.defense + cardmodel.defense * upgradedata.statup,
-            stamina: upgradecard.stamina + cardmodel.stamina * upgradedata.statup,
+            speed: upgradecard.speed + cardmodel.speed * upgradeData.statup,
+            shootAccuracy: upgradecard.shootAccuracy + cardmodel.shootAccuracy * upgradeData.statup,
+            shootPower: upgradecard.shootPower + cardmodel.shootPower * upgradeData.statup,
+            defense: upgradecard.defense + cardmodel.defense * upgradeData.statup,
+            stamina: upgradecard.stamina + cardmodel.stamina * upgradeData.statup,
           },
         });
 
@@ -170,7 +170,7 @@ router.post('/every', async (req, res, next) => {
     }
 
     // 카드 인벤토리 여부 검사
-    if (upgradecard.state !== upgradedata.INVENTORY) {
+    if (upgradecard.state !== upgradeData.INVENTORY) {
       return res.status(400).json({
         Message: '인벤토리에 있는 카드만 강화가 가능합니다. 장착을 해제하고 시도해주세요',
       });
@@ -187,7 +187,7 @@ router.post('/every', async (req, res, next) => {
         userId: req.user.userId,
         cardCode: upgradecard.cardCode,
         cardEnhancement: upgradecard.cardEnhancement,
-        state: upgradedata.INVENTORY,
+        state: upgradeData.INVENTORY,
       },
     });
     if (materialcards.length < 2) {
@@ -198,7 +198,7 @@ router.post('/every', async (req, res, next) => {
 
     // 강화 성공 확률
     const percentage =
-      upgradedata.firstpercentage - upgradecard.cardEnhancement * upgradedata.percentagedown;
+      upgradeData.firstpercentage - upgradecard.cardEnhancement * upgradeData.percentagedown;
 
     // 능력치 기준 모델
     const cardmodel = await prisma.cardModel.findFirst({
@@ -226,13 +226,13 @@ router.post('/every', async (req, res, next) => {
             where: { cardId: materialcards[2 * i].cardId },
             data: {
               cardEnhancement: materialcards[2 * i].cardEnhancement + 1,
-              speed: materialcards[2 * i].speed + cardmodel.speed * upgradedata.statup,
+              speed: materialcards[2 * i].speed + cardmodel.speed * upgradeData.statup,
               shootAccuracy:
-                materialcards[2 * i].shootAccuracy + cardmodel.shootAccuracy * upgradedata.statup,
+                materialcards[2 * i].shootAccuracy + cardmodel.shootAccuracy * upgradeData.statup,
               shootPower:
-                materialcards[2 * i].shootPower + cardmodel.shootPower * upgradedata.statup,
-              defense: materialcards[2 * i].defense + cardmodel.defense * upgradedata.statup,
-              stamina: materialcards[2 * i].stamina + cardmodel.stamina * upgradedata.statup,
+                materialcards[2 * i].shootPower + cardmodel.shootPower * upgradeData.statup,
+              defense: materialcards[2 * i].defense + cardmodel.defense * upgradeData.statup,
+              stamina: materialcards[2 * i].stamina + cardmodel.stamina * upgradeData.statup,
             },
           });
 
