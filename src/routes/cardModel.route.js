@@ -1,12 +1,14 @@
 import express from 'express';
 import { prisma } from '../lib/utils/prisma/index.js';
-import au from '../middlewares/auths/user-auth.middleware.js';
+import userAuthMiddleware from '../middlewares/auths/user-auth.middleware.js';
 
 const router = express.Router();
 
 // 카드 생성 API
 
-router.post('/cardModel', au, async (req, res, next) => {
+router.use(userAuthMiddleware)
+
+router.post('/cardModel', async (req, res, next) => {
     try{
         // 현재 사용자가 운영자인지 확인
         if(!req.user.isGM) {
@@ -66,7 +68,7 @@ router.post('/cardModel', au, async (req, res, next) => {
 
 // 카드 수정 API
 
-router.put('/cardModel/:cardCode', au, async (req, res, next) => {
+router.put('/cardModel/:cardCode', async (req, res, next) => {
     try {
         //  현재 사용자가 운영자인지 확인
          if(!req.user.isGM) {
